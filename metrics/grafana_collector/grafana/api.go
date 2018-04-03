@@ -154,7 +154,7 @@ func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadClose
 func (g client) getPanelURL(p Panel, dashName string, t TimeRange) string {
 	values := url.Values{}
 	values.Add("theme", "light")
-	values.Add("panelId", strconv.Itoa(p.Id))
+	values.Add("panelId", strconv.Itoa(p.ID))
 	values.Add("from", t.From)
 	values.Add("to", t.To)
 	if p.IsSingleStat() {
@@ -172,6 +172,6 @@ func (g client) getPanelURL(p Panel, dashName string, t TimeRange) string {
 	}
 
 	url := g.getPanelEndpoint(dashName, values)
-	log.Println("Downloading image ", p.Id, url)
+	log.Println("Downloading image ", p.ID, url)
 	return url
 }

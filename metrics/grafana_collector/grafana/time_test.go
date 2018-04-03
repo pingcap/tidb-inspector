@@ -27,11 +27,10 @@ import (
 func sameTimeAs(actual interface{}, expected ...interface{}) string {
 	if actual == expected[0] {
 		return ""
-	} else {
-		a := actual.(time.Time)
-		e := expected[0].(time.Time)
-		return fmt.Sprintf("Times differ:\n\t Actual: %q\n\tExpected: %q\n", a, e)
 	}
+	a := actual.(time.Time)
+	e := expected[0].(time.Time)
+	return fmt.Sprintf("Times differ:\n\t Actual: %q\n\tExpected: %q\n", a, e)
 }
 
 func TestTimeParsing(tst *testing.T) {

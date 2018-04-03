@@ -31,12 +31,12 @@ func TestV4Dashboard(t *testing.T) {
 		"Rows":
 			[{
 				"Panels":
-					[{"Type":"singlestat", "Id":1},
-					{"Type":"graph", "Id":2}],
+					[{"Type":"singlestat", "ID":1},
+					{"Type":"graph", "ID":2}],
 				"Title": "RowTitle #"
 			},
 			{"Panels":
-				[{"Type":"singlestat", "Id":3, "Title": "Panel3Title #"}]
+				[{"Type":"singlestat", "ID":3, "Title": "Panel3Title #"}]
 			}],
 		"title":"DashTitle #"
 	},
@@ -51,24 +51,8 @@ func TestV4Dashboard(t *testing.T) {
 			So(dash.Panels[2].IsSingleStat(), ShouldBeTrue)
 		})
 
-		Convey("Row title should be parsed and santised", func() {
-			So(dash.Rows[0].Title, ShouldEqual, "RowTitle \\#")
-		})
-
-		Convey("Panel titles should be parsed and sanitised", func() {
-			So(dash.Panels[2].Title, ShouldEqual, "Panel3Title \\#")
-		})
-
-		Convey("When accessing Panels from within Rows, titles should still be sanitised", func() {
-			So(dash.Rows[1].Panels[0].Title, ShouldEqual, "Panel3Title \\#")
-		})
-
 		Convey("Panels should contain all panels from all rows", func() {
 			So(dash.Panels, ShouldHaveLength, 3)
-		})
-
-		Convey("The Title should be parsed and sanitised", func() {
-			So(dash.Title, ShouldEqual, "DashTitle \\#")
 		})
 	})
 }
@@ -79,10 +63,10 @@ func TestV5Dashboard(t *testing.T) {
 {"Dashboard":
 	{
 		"Panels":
-			[{"Type":"singlestat", "Id":0},
-			{"Type":"graph", "Id":1},
-			{"Type":"singlestat", "Id":2, "Title":"Panel3Title #"},
-			{"Type":"row", "Id":3}],
+			[{"Type":"singlestat", "ID":0},
+			{"Type":"graph", "ID":1},
+			{"Type":"singlestat", "ID":2, "Title":"Panel3Title #"},
+			{"Type":"row", "ID":3}],
 		"Title":"DashTitle #"
 	},
 
@@ -97,19 +81,11 @@ func TestV5Dashboard(t *testing.T) {
 			So(dash.Panels[2].IsSingleStat(), ShouldBeTrue)
 		})
 
-		Convey("Panel titles should be parsed and sanitised", func() {
-			So(dash.Panels[2].Title, ShouldEqual, "Panel3Title \\#")
-		})
-
 		Convey("Panels should contain all panels that have type != row", func() {
 			So(dash.Panels, ShouldHaveLength, 3)
-			So(dash.Panels[0].Id, ShouldEqual, 0)
-			So(dash.Panels[1].Id, ShouldEqual, 1)
-			So(dash.Panels[2].Id, ShouldEqual, 2)
-		})
-
-		Convey("The Title should be parsed", func() {
-			So(dash.Title, ShouldEqual, "DashTitle \\#")
+			So(dash.Panels[0].ID, ShouldEqual, 0)
+			So(dash.Panels[1].ID, ShouldEqual, 1)
+			So(dash.Panels[2].ID, ShouldEqual, 2)
 		})
 	})
 }

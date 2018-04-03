@@ -52,7 +52,7 @@ func TestV4ServeReportHandler(t *testing.T) {
 		}
 		//mock new report function to capture and validate its input parameters
 		var repDashName string
-		newReport := func(g grafana.Client, dashName string, _ grafana.TimeRange, _ string) report.Report {
+		newReport := func(g grafana.Client, dashName string, _ grafana.TimeRange) report.Report {
 			repDashName = dashName
 			return &mockReport{}
 		}
@@ -103,7 +103,7 @@ func TestV5ServeReportHandler(t *testing.T) {
 		}
 		//mock new report function to capture and validate its input parameters
 		var repDashName string
-		newReport := func(g grafana.Client, dashName string, _ grafana.TimeRange, _ string) report.Report {
+		newReport := func(g grafana.Client, dashName string, _ grafana.TimeRange) report.Report {
 			repDashName = dashName
 			return &mockReport{}
 		}

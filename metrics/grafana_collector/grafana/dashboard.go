@@ -25,14 +25,14 @@ import (
 
 // Panel represents a Grafana dashboard panel
 type Panel struct {
-	Id    int
+	ID    int
 	Type  string
 	Title string
 }
 
 // Row represents a container for Panels
 type Row struct {
-	Id        int
+	ID        int
 	Showtitle bool
 	Title     string
 	Panels    []Panel
@@ -102,6 +102,7 @@ func populatePanelsFromV5JSON(dash Dashboard, dc dashContainer) Dashboard {
 	return dash
 }
 
+// IsSingleStat ... check if singlestat
 func (p Panel) IsSingleStat() bool {
 	if p.Type == "singlestat" {
 		return true
@@ -109,6 +110,7 @@ func (p Panel) IsSingleStat() bool {
 	return false
 }
 
+// IsVisible ... check if visible
 func (r Row) IsVisible() bool {
 	return r.Showtitle
 }

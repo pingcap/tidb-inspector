@@ -139,7 +139,7 @@ func (rep *report) renderPNG(p grafana.Panel) error {
 	if err != nil {
 		return fmt.Errorf("error creating img directory:%v", err)
 	}
-	imgFileName := fmt.Sprintf("image%d.png", p.Id)
+	imgFileName := fmt.Sprintf("image%d.png", p.ID)
 	file, err := os.Create(filepath.Join(rep.imgDirPath(), imgFileName))
 	if err != nil {
 		return fmt.Errorf("error creating image file:%v", err)
@@ -157,18 +157,18 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 	pdf := gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: 595.28, H: 841.89}})
 	pdf.AddPage()
-	err = pdf.AddTTFFont("loma", "ttf/Loma.ttf")
+	err = pdf.AddTTFFont("opensans", "ttf/OpenSans-Regular.ttf")
 	if err != nil {
 		log.Print(err.Error())
 		return
 	}
-	err = pdf.SetFont("loma", "", 14)
+	err = pdf.SetFont("opensans", "", 14)
 	if err != nil {
 		log.Print(err.Error())
 		return nil, err
 	}
-	rect_graph := &gopdf.Rect{W: 480, H: 240}
-	rect_singlestat := &gopdf.Rect{W: 300, H: 150}
+	rectGraph := &gopdf.Rect{W: 480, H: 240}
+	rectSinglestat := &gopdf.Rect{W: 300, H: 150}
 	rect := &gopdf.Rect{}
 
 	pdf.SetX(50)
@@ -190,13 +190,13 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 	go func(panels <-chan grafana.Panel, errs chan<- error) {
 		defer wg.Done()
 		for p := range panels {
-			imgFileName := fmt.Sprintf("image%d.png", p.Id)
+			imgFileName := fmt.Sprintf("image%d.png", p.ID)
 			imgFilePath := filepath.Join(rep.imgDirPath(), imgFileName)
 
 			if p.IsSingleStat() {
-				rect = rect_singlestat
+				rect = rectSinglestat
 			} else {
-				rect = rect_graph
+				rect = rectGraph
 			}
 
 			if count%2 == 0 {
@@ -211,7 +211,7 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 			} else {
 				log.Printf("Rendering image to PDF: %s", imgFileName)
 			}
-			count += 1
+			count++
 		}
 	}(panels, errs)
 

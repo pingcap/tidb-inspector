@@ -24,6 +24,7 @@ import (
 	"time"
 )
 
+// TimeRange ... TimeRange from grafana url
 type TimeRange struct {
 	From string
 	To   string
@@ -44,6 +45,7 @@ type now time.Time
 
 type boundary int
 
+// TimeRange boundary
 const (
 	From boundary = iota
 	To
@@ -58,6 +60,7 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
+// NewTimeRange ...
 func NewTimeRange(from, to string) TimeRange {
 	if from == "" {
 		from = "now-1h"
@@ -68,13 +71,13 @@ func NewTimeRange(from, to string) TimeRange {
 	return TimeRange{from, to}
 }
 
-// Formats Grafana 'From' time spec into absolute printable UTC time
+// FromFormatted ... Formats Grafana 'From' time spec into absolute printable UTC time
 func (tr TimeRange) FromFormatted() string {
 	n := newNow()
 	return n.parseFrom(tr.From).UTC().Format(time.UnixDate)
 }
 
-// Formats Grafana 'To' time spec into absolute printable UTC time
+// ToFormatted ... Formats Grafana 'To' time spec into absolute printable UTC time
 func (tr TimeRange) ToFormatted() string {
 	n := newNow()
 	return n.parseTo(tr.To).UTC().Format(time.UnixDate)
@@ -99,10 +102,9 @@ func (n now) parseTo(s string) time.Time {
 func (n now) parseHumanFriendlyBoundary(s string, b boundary) time.Time {
 	if !isHumanFriendlyBoundray(s) {
 		return n.parseMoment(s)
-	} else {
-		moment, boundaryUnit := n.parseMomentAndBoundaryUnit(s)
-		return roundMomentToBoundary(moment, b, boundaryUnit)
 	}
+	moment, boundaryUnit := n.parseMomentAndBoundaryUnit(s)
+	return roundMomentToBoundary(moment, b, boundaryUnit)
 }
 
 func (n now) parseMomentAndBoundaryUnit(s string) (time.Time, string) {
@@ -149,10 +151,9 @@ func add(b boundary) int {
 func daysToWeekBoundary(wd time.Weekday, b boundary) int {
 	if b == To {
 		return 1 + int(time.Saturday) - int(wd)
-	} else {
-		//b == From
-		return -int(wd)
 	}
+	//b == From
+	return -int(wd)
 }
 
 func (n now) parseMoment(s string) time.Time {

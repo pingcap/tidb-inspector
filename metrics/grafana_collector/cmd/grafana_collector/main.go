@@ -18,24 +18,40 @@ package main
 
 import (
 	"flag"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/ngaut/log"
 	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/grafana"
 	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/report"
 )
 
-var proto = flag.String("proto", "http://", "Grafana Protocol")
-var ip = flag.String("ip", "localhost:3000", "Grafana IP and port")
-var port = flag.String("port", ":8686", "Port to serve on")
+var (
+	proto    = flag.String("proto", "http://", "Grafana Protocol")
+	ip       = flag.String("ip", "localhost:3000", "Grafana IP and port")
+	port     = flag.String("port", ":8686", "Port to serve on")
+	logFile  = flag.String("log-file", "", "log file path")
+	logLevel = flag.String("log-level", "info", "log level: debug, info, warn, error, fatal")
+)
+
+func initLog() error {
+	log.SetLevelByString(*logLevel)
+	if *logFile != "" {
+		return log.SetOutputByName(*logFile)
+	}
+	log.SetOutput(os.Stdout)
+	return nil
+}
 
 func main() {
 	flag.Parse()
-	log.SetOutput(os.Stdout)
+	if err := initLog(); err != nil {
+		log.Errorf("Init log file with error: %v", err)
+		return
+	}
 
-	log.Printf("serving at '%s' and using grafana at '%s'", *port, *ip)
+	log.Infof("serving at '%s' and using grafana at '%s%s'", *port, *proto, *ip)
 
 	router := mux.NewRouter()
 	RegisterHandlers(

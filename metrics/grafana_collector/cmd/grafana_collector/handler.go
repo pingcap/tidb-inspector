@@ -18,12 +18,12 @@ package main
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/ngaut/log"
 	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/grafana"
 	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/report"
 )
@@ -42,13 +42,13 @@ func RegisterHandlers(router *mux.Router, reportServerV4, reportServerV5 ServeRe
 }
 
 func (h ServeReportHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Print("Reporter called")
+	log.Info("Reporter called")
 	g := h.newGrafanaClient(*proto+*ip, apiToken(req), dashVariables(req))
 	rep := h.newReport(g, dashID(req), time(req))
 
 	file, err := rep.Generate()
 	if err != nil {
-		log.Println("Error generating report:", err)
+		log.Errorf("Error generating report: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -57,30 +57,30 @@ func (h ServeReportHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 
 	_, err = io.Copy(w, file)
 	if err != nil {
-		log.Println("Error copying data to response:", err)
+		log.Errorf("Error copying data to response: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	log.Println("Report generated correctly")
+	log.Info("Report generated correctly")
 }
 
 func dashID(r *http.Request) string {
 	vars := mux.Vars(r)
 	d := vars["dashId"]
-	log.Println("Called with dashboard:", d)
+	log.Infof("Called with dashboard: %s", d)
 	return d
 }
 
 func time(r *http.Request) grafana.TimeRange {
 	params := r.URL.Query()
 	t := grafana.NewTimeRange(params.Get("from"), params.Get("to"))
-	log.Println("Called with time range:", t)
+	log.Infof("Called with time range: %v", t)
 	return t
 }
 
 func apiToken(r *http.Request) string {
 	apiToken := r.URL.Query().Get("apitoken")
-	log.Println("Called with api Token:", apiToken)
+	log.Infof("Called with api Token: %s", apiToken)
 	return apiToken
 }
 
@@ -88,14 +88,14 @@ func dashVariables(r *http.Request) url.Values {
 	output := url.Values{}
 	for k, v := range r.URL.Query() {
 		if strings.HasPrefix(k, "var-") {
-			log.Println("Called with variable:", k, v)
+			log.Infof("Called with variable: %s: %v", k, v)
 			for _, singleV := range v {
 				output.Add(k, singleV)
 			}
 		}
 	}
 	if len(output) == 0 {
-		log.Println("Called without variable")
+		log.Info("Called without variable")
 	}
 	return output
 }

@@ -17,8 +17,8 @@
 package grafana
 
 import (
+	"github.com/ngaut/log"
 	"io/ioutil"
-	"log"
 	"regexp"
 	"strconv"
 	"time"
@@ -60,7 +60,7 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
-// NewTimeRange ...
+// NewTimeRange ... creates a new TimeRange
 func NewTimeRange(from, to string) TimeRange {
 	if from == "" {
 		from = "now-1h"

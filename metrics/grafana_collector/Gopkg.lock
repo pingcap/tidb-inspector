@@ -26,10 +26,25 @@
   version = "v4.2.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/ngaut/log"
+  packages = ["."]
+  revision = "b8e36e7ba5ac61ce5644e570f1cc42d97dbaf8ed"
+
+[[projects]]
   name = "github.com/pborman/uuid"
   packages = ["."]
   revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
   version = "v1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/signintech/gopdf"
+  packages = [
+    ".",
+    "fontmaker/core"
+  ]
+  revision = "55ea01955b8489e8aae0f85d4aaa0ae72ace0053"
 
 [[projects]]
   name = "github.com/smartystreets/assertions"
@@ -54,6 +69,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2f0059310c8aeb78e4f272162d6cd95df0cafe35aed54ce9b284138afa4ae036"
+  inputs-digest = "235667e0af5bc0f642fbda3f53eed8f66e29b0a1cafdf0519886be4722298b16"
   solver-name = "gps-cdcl"
   solver-version = 1

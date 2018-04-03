@@ -18,7 +18,7 @@ package grafana
 
 import (
 	"encoding/json"
-	"log"
+	"github.com/ngaut/log"
 	"net/url"
 	"strings"
 )
@@ -64,7 +64,7 @@ func NewDashboard(dashJSON []byte, variables url.Values) Dashboard {
 		panic(err)
 	}
 	d := dash.NewDashboard(variables)
-	log.Printf("Populated dashboard datastructure: %+v\n", d)
+	log.Infof("Populated dashboard datastructure: %+v\n", d)
 	return d
 }
 

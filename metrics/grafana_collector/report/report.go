@@ -18,11 +18,11 @@ package report
 
 import (
 	"fmt"
+	"github.com/ngaut/log"
 	"github.com/pborman/uuid"
 	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/grafana"
 	"github.com/signintech/gopdf"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -78,7 +78,7 @@ func (rep *report) Generate() (pdf io.ReadCloser, err error) {
 func (rep *report) Clean() {
 	err := os.RemoveAll(rep.tmpDir)
 	if err != nil {
-		log.Println("Error cleaning up tmp dir:", err)
+		log.Infof("Error cleaning up tmp dir: %v", err)
 	}
 }
 
@@ -111,7 +111,7 @@ func (rep *report) renderPNGsParallel(dash grafana.Dashboard) error {
 			for p := range panels {
 				err := rep.renderPNG(p)
 				if err != nil {
-					log.Printf("Error creating image for panel: %v", err)
+					log.Errorf("Error creating image for panel: %v", err)
 					errs <- err
 				}
 			}
@@ -159,12 +159,12 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 	pdf.AddPage()
 	err = pdf.AddTTFFont("opensans", "ttf/OpenSans-Regular.ttf")
 	if err != nil {
-		log.Print(err.Error())
-		return
+		log.Error(err.Error())
+		return nil, err
 	}
 	err = pdf.SetFont("opensans", "", 14)
 	if err != nil {
-		log.Print(err.Error())
+		log.Error(err.Error())
 		return nil, err
 	}
 	rectGraph := &gopdf.Rect{W: 480, H: 240}
@@ -203,13 +203,15 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 				err = pdf.Image(imgFilePath, 50, 80, rect)
 			} else {
 				err = pdf.Image(imgFilePath, 50, 350, rect)
-				pdf.AddPage()
+				if len(panels) != 0 {
+					pdf.AddPage()
+				}
 			}
 			if err != nil {
-				log.Printf("Error rendering image to PDF: %v", err)
+				log.Errorf("Error rendering image to PDF: %v", err)
 				errs <- err
 			} else {
-				log.Printf("Rendering image to PDF: %s", imgFileName)
+				log.Infof("Rendering image to PDF: %s", imgFileName)
 			}
 			count++
 		}

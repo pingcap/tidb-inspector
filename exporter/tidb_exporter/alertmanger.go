@@ -50,6 +50,7 @@ var (
 
 type alert *Alert
 
+// Alert ...
 // import error and copy it from prometheus https://github.com/prometheus/prometheus/blob/master/notifier/notifier.go
 // Alert is a generic representation of an alert in the Prometheus eco-system.
 type Alert struct {

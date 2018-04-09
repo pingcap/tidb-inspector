@@ -52,12 +52,10 @@ type Row struct {
 }
 
 // Dashboard represents a Grafana dashboard
-// This is both used to unmarshal the dashbaord JSON into
-// and then enriched (sanitize fields for TeX consumption and add VarialbeValues)
+// This is used to unmarshal the dashbaord JSON
 type Dashboard struct {
 	Title          string
-	Description    string
-	VariableValues string //Not present in the Grafana JSON structure. Enriched data passed used by the Tex templating
+	VariableValues string //Not present in the Grafana JSON structure
 	Rows           []Row
 	Panels         []Panel
 }
@@ -84,7 +82,6 @@ func NewDashboard(dashJSON []byte, variables url.Values) Dashboard {
 func (dc dashContainer) NewDashboard(variables url.Values) Dashboard {
 	var dash Dashboard
 	dash.Title = dc.Dashboard.Title
-	dash.Description = dc.Dashboard.Description
 	dash.VariableValues = getVariablesValues(variables)
 
 	if len(dc.Dashboard.Rows) == 0 {
@@ -115,7 +112,7 @@ func populatePanelsFromV5JSON(dash Dashboard, dc dashContainer) Dashboard {
 	return dash
 }
 
-// IsSingleStat ... check if singlestat
+// IsSingleStat ... checks if panel is singlestat
 func (p Panel) IsSingleStat() bool {
 	if p.Type == "singlestat" {
 		return true
@@ -123,7 +120,7 @@ func (p Panel) IsSingleStat() bool {
 	return false
 }
 
-// IsVisible ... check if visible
+// IsVisible ... checks if row is visible
 func (r Row) IsVisible() bool {
 	return r.Showtitle
 }

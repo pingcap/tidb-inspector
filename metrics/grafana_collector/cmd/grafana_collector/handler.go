@@ -1,3 +1,16 @@
+// Copyright 2018 PingCAP, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /*
    Copyright 2018 Vastech SA (PTY) LTD
 
@@ -28,7 +41,7 @@ import (
 	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/report"
 )
 
-// ServeReportHandler generate grafana dashboard pdf file and return to client
+// ServeReportHandler generates grafana dashboard pdf file and returns to client
 type ServeReportHandler struct {
 	newGrafanaClient func(url string, apiToken string, variables url.Values) grafana.Client
 	newReport        func(g grafana.Client, dashName string, time grafana.TimeRange) report.Report

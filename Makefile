@@ -10,7 +10,7 @@ PACKAGES := $$(go list ./... | grep -vE 'vendor')
 build: check test grafana_collector
 
 grafana_collector:
-	$(GO) build -ldflags '$(LDFLAGS)' -o bin/grafana_collector ./metrics/grafana_collector/cmd/grafana_collector/*.go
+	$(GO) build -ldflags '$(LDFLAGS)' -o bin/grafana_collector ./grafana_collector/cmd/grafana_collector/*.go
 
 test:
 	@export log_level=error; \

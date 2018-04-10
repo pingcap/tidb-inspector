@@ -37,8 +37,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ngaut/log"
-	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/grafana"
-	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/report"
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/grafana"
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/report"
 )
 
 // ServeReportHandler generates grafana dashboard pdf file and returns to client

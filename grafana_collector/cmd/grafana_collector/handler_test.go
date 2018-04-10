@@ -39,8 +39,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/grafana"
-	"github.com/pingcap/tidb-inspect-tools/metrics/grafana_collector/report"
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/grafana"
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/report"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -39,14 +39,14 @@ import (
 // Panel represents a Grafana dashboard panel
 type Panel struct {
 	ID    int
-	Type  string
+	Type  string // Panel Type: Graph/Singlestat
 	Title string
 }
 
 // Row represents a container for Panels
 type Row struct {
 	ID        int
-	Showtitle bool
+	Showtitle bool // Row is visible or hidden
 	Title     string
 	Panels    []Panel
 }

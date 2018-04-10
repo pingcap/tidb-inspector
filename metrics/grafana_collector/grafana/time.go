@@ -30,7 +30,6 @@
 package grafana
 
 import (
-	"github.com/ngaut/log"
 	"io/ioutil"
 	"regexp"
 	"strconv"
@@ -68,10 +67,6 @@ const (
 	relTimeRegExp      = "^now(-[0-9]+)([mhdwMy])$"
 	boundaryTimeRegExp = "^(.*?)/([dwMy])$"
 )
-
-func init() {
-	log.SetOutput(ioutil.Discard)
-}
 
 // NewTimeRange ... creates a new TimeRange
 func NewTimeRange(from, to string) TimeRange {

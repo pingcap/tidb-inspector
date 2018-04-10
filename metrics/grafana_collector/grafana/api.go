@@ -155,7 +155,7 @@ func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadClose
 	if resp.StatusCode != 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("error reading response: %v", err)
 		}
 		log.Errorf("Error obtaining render: %s", string(body))
 		return nil, errors.New("Error obtaining render: " + resp.Status)

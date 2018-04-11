@@ -33,6 +33,9 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gorilla/mux"
 	"github.com/ngaut/log"
@@ -90,5 +93,20 @@ func main() {
 		ServeReportHandler{grafana.NewV5Client, report.New},
 	)
 
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc,
+		syscall.SIGKILL,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
+	go func() {
+		sig := <-sc
+		log.Infof("got signal [%d] to exit.", sig)
+		os.Exit(0)
+	}()
+
 	log.Fatal(http.ListenAndServe(*port, router))
+
 }

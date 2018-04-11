@@ -30,7 +30,6 @@
 package grafana
 
 import (
-	"io/ioutil"
 	"regexp"
 	"strconv"
 	"time"
@@ -206,7 +205,7 @@ func (n now) parseRelativeTime(s string) time.Time {
 }
 
 func parseAbsTime(s string) time.Time {
-	if timeInMs, err := strconv.Atoi(s); err == nil {
+	if timeInMs, err := strconv.ParseInt(s, 10, 64); err == nil {
 		return time.Unix(int64(timeInMs)/1000, 0)
 	}
 

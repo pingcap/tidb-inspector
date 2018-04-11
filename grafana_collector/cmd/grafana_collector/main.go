@@ -33,7 +33,6 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/ngaut/log"
@@ -49,6 +48,8 @@ var (
 	logFile      = flag.String("log-file", "", "log file path")
 	logLevel     = flag.String("log-level", "info", "log level: debug, info, warn, error, fatal")
 	logRotate    = flag.String("log-rotate", "day", "log file rotate type: hour/day")
+	configFile   = flag.String("config", "", "path to configuration file")
+	fontDir      = flag.String("font-dir", "", "ttf fonts directory")
 	printVersion = flag.Bool("V", false, "prints version and exit")
 )
 
@@ -59,6 +60,16 @@ func main() {
 		fmt.Println(utils.GetRawInfo("grafana_collector"))
 		return
 	}
+
+	err := report.NewConfig(*configFile)
+	if err != nil {
+		log.Fatalf("parsing configure file error: %v", err)
+	}
+
+	if *fontDir == "" {
+		log.Fatalf("missing parameter: -font-dir")
+	}
+	report.NewFontDir(*fontDir)
 
 	log.SetLevelByString(*logLevel)
 	if *logFile != "" {

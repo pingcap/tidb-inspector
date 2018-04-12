@@ -7,24 +7,23 @@ import (
 
 // variables for rendering pdf
 var (
-	ReportConfig = &tomlConfig{}
+	ReportConfig = &Config{}
 	FontDir      = ""
 )
 
-// NewConfig ... parses pdf template configure file
-func NewConfig(configFile string) error {
-	if _, err := toml.DecodeFile(configFile, ReportConfig); err != nil {
-		return errors.Trace(err)
-	}
-	return nil
+// SetConfig ... parses pdf template configure file
+func SetConfig(configFile string) error {
+	_, err := toml.DecodeFile(configFile, ReportConfig)
+	return errors.Trace(err)
 }
 
-// NewFontDir ... sets up ttf font directory
-func NewFontDir(fontDir string) {
+// SetFontDir ... sets up ttf font directory
+func SetFontDir(fontDir string) {
 	FontDir = fontDir
 }
 
-type tomlConfig struct {
+// Config ... pdf template config
+type Config struct {
 	Font     font
 	Rect     map[string]rect
 	Position position

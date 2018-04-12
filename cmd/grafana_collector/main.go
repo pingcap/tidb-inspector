@@ -64,7 +64,7 @@ func main() {
 		return
 	}
 
-	err := report.NewConfig(*configFile)
+	err := report.SetConfig(*configFile)
 	if err != nil {
 		log.Fatalf("parsing configure file error: %v", err)
 	}
@@ -72,7 +72,7 @@ func main() {
 	if *fontDir == "" {
 		log.Fatalf("missing parameter: -font-dir")
 	}
-	report.NewFontDir(*fontDir)
+	report.SetFontDir(*fontDir)
 
 	log.SetLevelByString(*logLevel)
 	if *logFile != "" {

@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
+  version = "v0.3.0"
+
+[[projects]]
   name = "github.com/Shopify/sarama"
   packages = ["."]
   revision = "f7be6aa2bc7b2e38edf816b08b582782194a1c02"
@@ -235,6 +241,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c6f025376cad19bfc130ab06268ab5929a0abd70fe05ee46615b633faca796dd"
+  inputs-digest = "09275b68f5db34286e6c5af3b9c1837d969b2f377c01e91b372187dc81e6acb4"
   solver-name = "gps-cdcl"
   solver-version = 1

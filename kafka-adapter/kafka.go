@@ -1,11 +1,11 @@
 package main
 
 import (
-	//"fmt"
 	"encoding/json"
+	"strings"
+
 	"github.com/Shopify/sarama"
 	"github.com/ngaut/log"
-	"strings"
 )
 
 const (

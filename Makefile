@@ -5,12 +5,15 @@ GO=GO15VENDOREXPERIMENT="1" go
 GOTEST=GO15VENDOREXPERIMENT="1" CGO_ENABLED=1 go test
 PACKAGES := $$(go list ./... | grep -vE 'vendor')
 
-.PHONY: build grafana_collector clean
+.PHONY: build grafana_collector kafka-adapter clean
 
-build: check test grafana_collector
+build: check test grafana_collector kafka-adapter
 
 grafana_collector:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/grafana_collector cmd/grafana_collector/*.go
+
+kafka-adapter:
+	$(GO) build -ldflags '$(LDFLAGS)' -o bin/kafka-adapter kafka-adapter/*.go
 
 test:
 	@export log_level=error; \

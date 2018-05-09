@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/ngaut/log"
-	"github.com/unrolled/render"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/ngaut/log"
+	"github.com/unrolled/render"
 )
 
 // AlertData alertmanager base struct

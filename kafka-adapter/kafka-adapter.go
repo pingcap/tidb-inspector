@@ -3,27 +3,28 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/Shopify/sarama"
-	"github.com/juju/errors"
-	"github.com/ngaut/log"
-	"github.com/unrolled/render"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/Shopify/sarama"
+	"github.com/ngaut/log"
+	"github.com/unrolled/render"
 )
 
 var (
-	port         = flag.Int("port", 28082, "http listen port")
-	kafkaAddress = flag.String("kafka-address", "10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092", "kafka adddress")
+	port         = flag.Int("port", 28082, "port to listen on for the web interface")
+	kafkaAddress = flag.String("kafka-address", "10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092", "kafka address")
 	kafkaTopic   = flag.String("kafka-topic", "test", "kafka topic")
-	logFile      = flag.String("log-file", "kafka-adapter.log", "log file")
+	logFile      = flag.String("log-file", "", "log file path")
 	logLevel     = flag.String("log-level", "info", "log level: debug, info, warn, error, fatal")
+	logRotate    = flag.String("log-rotate", "day", "log file rotate type: hour/day")
 )
 
-//KafkaMsg represent kafka msg
+//KafkaMsg represents kafka message
 type KafkaMsg struct {
 	Title       string `json:"title"`
 	Source      string `json:"source"`
@@ -37,32 +38,14 @@ type KafkaMsg struct {
 	Time        string `json:"time"`
 }
 
-//Run represent runtime informations
+//Run represents runtime information
 type Run struct {
 	Rdr         *render.Render
 	AlertMsgs   chan *AlertData
 	KafkaClient sarama.SyncProducer
 }
 
-func checkParams() error {
-	if *kafkaAddress == "" {
-		return errors.New("please input kafka address")
-	}
-	if *kafkaTopic == "" {
-		return errors.New("please input kafka topic")
-	}
-	return nil
-}
-
-func initLog() error {
-	log.SetLevelByString(*logLevel)
-	if *logFile != "" {
-		return log.SetOutputByName(*logFile)
-	}
-	return nil
-}
-
-//Scheduler for monitor chann data
+//Scheduler for monitoring chan data
 func (r *Run) Scheduler() {
 	for {
 		lenAlertMsgs := len(r.AlertMsgs)
@@ -77,13 +60,22 @@ func (r *Run) Scheduler() {
 
 func main() {
 	flag.Parse()
-	if err := checkParams(); err != nil {
-		fmt.Printf("params error: %v", err)
-		return
+
+	if *kafkaAddress == "" {
+		log.Fatalf("missing parameter: -kafka-address")
 	}
-	if err := initLog(); err != nil {
-		fmt.Printf("init log file error: %v", err)
-		return
+	if *kafkaTopic == "" {
+		log.Fatalf("missing parameter: -kafka-topic")
+	}
+
+	log.SetLevelByString(*logLevel)
+	if *logFile != "" {
+		log.SetOutputByName(*logFile)
+		if *logRotate == "hour" {
+			log.SetRotateByHour()
+		} else {
+			log.SetRotateByDay()
+		}
 	}
 
 	r := &Run{

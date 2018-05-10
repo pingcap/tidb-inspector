@@ -68,7 +68,7 @@ func (r *Run) CreateRouter() *mux.Router {
 	return m
 }
 
-//CreateRender for render.
+//CreateRender for render
 func (r *Run) CreateRender() {
 	r.Rdr = render.New(render.Options{
 		IndentJSON: true,

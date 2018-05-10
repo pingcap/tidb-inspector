@@ -8,11 +8,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
-	"github.com/Shopify/sarama"
 	"github.com/ngaut/log"
-	"github.com/unrolled/render"
 )
 
 var (
@@ -23,40 +20,6 @@ var (
 	logLevel     = flag.String("log-level", "info", "log level: debug, info, warn, error, fatal")
 	logRotate    = flag.String("log-rotate", "day", "log file rotate type: hour/day")
 )
-
-//KafkaMsg represents kafka message
-type KafkaMsg struct {
-	Title       string `json:"title"`
-	Source      string `json:"source"`
-	Node        string `json:"node"`
-	Expr        string `json:"expr"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-	Level       string `json:"level"`
-	Note        string `json:"note"`
-	Value       string `json:"value"`
-	Time        string `json:"time"`
-}
-
-//Run represents runtime information
-type Run struct {
-	Rdr         *render.Render
-	AlertMsgs   chan *AlertData
-	KafkaClient sarama.SyncProducer
-}
-
-//Scheduler for monitoring chan data
-func (r *Run) Scheduler() {
-	for {
-		lenAlertMsgs := len(r.AlertMsgs)
-		if lenAlertMsgs > 0 {
-			for i := 0; i < lenAlertMsgs; i++ {
-				r.TransferData(<-r.AlertMsgs)
-			}
-		}
-		time.Sleep(3 * time.Second)
-	}
-}
 
 func main() {
 	flag.Parse()
@@ -80,10 +43,12 @@ func main() {
 	r := &Run{
 		AlertMsgs: make(chan *AlertData, 1000),
 	}
+
 	if err := r.CreateKafkaProducer(); err != nil {
 		log.Errorf("create kafka producer with error %v", err)
 		return
 	}
+
 	go r.Scheduler()
 
 	log.Infof("create a http server serving at %s", *port)

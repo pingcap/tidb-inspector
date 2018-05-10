@@ -3,14 +3,44 @@ package main
 import (
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/ngaut/log"
+	"github.com/unrolled/render"
 )
 
 const (
 	timeFormat = "2006-01-02 15:04:05"
 )
+
+//KafkaMsg represents kafka message
+type KafkaMsg struct {
+	Title       string `json:"title"`
+	Source      string `json:"source"`
+	Node        string `json:"node"`
+	Expr        string `json:"expr"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	Level       string `json:"level"`
+	Note        string `json:"note"`
+	Value       string `json:"value"`
+	Time        string `json:"time"`
+}
+
+//Run represents runtime information
+type Run struct {
+	Rdr         *render.Render
+	AlertMsgs   chan *AlertData
+	KafkaClient sarama.SyncProducer
+}
+
+func getValue(kv KV, key string) string {
+	if val, ok := kv[key]; ok {
+		return val
+	}
+	return ""
+}
 
 //CreateKafkaProducer creates a new SyncProducer using the given broker addresses and configuration
 func (r *Run) CreateKafkaProducer() error {
@@ -61,9 +91,15 @@ func (r *Run) TransferData(ad *AlertData) {
 	}
 }
 
-func getValue(kv KV, key string) string {
-	if val, ok := kv[key]; ok {
-		return val
+//Scheduler for monitoring chan data
+func (r *Run) Scheduler() {
+	for {
+		lenAlertMsgs := len(r.AlertMsgs)
+		if lenAlertMsgs > 0 {
+			for i := 0; i < lenAlertMsgs; i++ {
+				r.TransferData(<-r.AlertMsgs)
+			}
+		}
+		time.Sleep(3 * time.Second)
 	}
-	return ""
 }

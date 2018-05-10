@@ -51,9 +51,11 @@ func main() {
 
 	go r.Scheduler()
 
-	log.Infof("create a http server serving at %s", *port)
-	r.CreateRender()
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter()))
+	go func() {
+		log.Infof("create a http server serving at %d", *port)
+		r.CreateRender()
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter()))
+	}()
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc,

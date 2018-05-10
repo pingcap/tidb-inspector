@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/ngaut/log"
@@ -51,29 +50,23 @@ func main() {
 
 	go r.Scheduler()
 
-	go func() {
-		log.Infof("create a http server serving at %d", *port)
-		r.CreateRender()
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter()))
-	}()
-
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc,
+		syscall.SIGKILL,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	go func() {
 		sig := <-sc
-		log.Errorf("got signal [%d] to exit", sig)
+		log.Infof("got signal [%d] to exit.", sig)
 		r.KafkaClient.Close()
-		wg.Done()
+		os.Exit(0)
 	}()
 
-	wg.Wait()
+	log.Infof("create a http server serving at %d", *port)
+	r.CreateRender()
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter()))
 
 }

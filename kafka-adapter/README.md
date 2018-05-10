@@ -1,59 +1,74 @@
 kafka-adapter 
 ------
 
-**This tool is used to push alert messages to kafka**
-### Build
-- install Golang(1.8.3+)
-- `make`
-
-**The target executable binary file is bin/kafka-adapter**
-
 ### Usages
+
 ```
-Usage of ./kafka-adapte:
+Usage of ./kafka-adapter:
   -kafka-address string
-    	kafka adddress (default "10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092")
+    	kafka address, example: 10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092
   -kafka-topic string
-    	kafka topic (default "test")
+    	kafka topic
   -log-file string
-    	log file (default "kafka-adapter.log")
+    	log file path
   -log-level string
     	log level: debug, info, warn, error, fatal (default "info")
+  -log-rotate string
+    	log file rotate type: hour/day (default "day")
   -port int
-    	http listen port (default 28082) 
+    	port to listen on for the web interface (default 28082)
 ```
 
+### Example:
 
-### Examples:
-1. Prometheus update alert.yml file and restart 
-	- URL`https://github.com/pingcap/tidb-ansible/tree/master/roles/prometheus/files`
-2. Alertmanager configure file add webhook scope 
-	- `webhook` as first router
-	- `url` URLPath is hardcode `/v1/alertmanager`
-	
 ```
-	route:
-  receiver: "pingcap-dt"
-  group_by: ['env','instance','type','group','job']
+#!/bin/bash
+nohup ./kafka-adapter \
+    --log-level="info" \
+    --log-file="kafka-adapter.log" \
+    --kafka-address="172.16.10.50:9092,172.16.10.61:9092,172.16.10.62:9092" \
+    --kafka-topic="test" &
+```
+
+```
+route:
+  # A default receiver
+  receiver: "db-alert-email"
+
+  # The labels by which incoming alerts are grouped together. For example,
+  # multiple alerts coming in for cluster=A and alertname=LatencyHigh would
+  # be batched into a single group.
+  group_by: ['env','instance','alertname','type','group','job']
+
+  # When a new group of alerts is created by an incoming alert, wait at
+  # least 'group_wait' to send the initial notification.
+  # This way ensures that you get multiple alerts for the same group that start
+  # firing shortly after another are batched together on the first
+  # notification.
   group_wait:      30s
-  group_interval:  1m
+
+  # When the first notification was sent, wait 'group_interval' to send a batch
+  # of new alerts that started firing for that group.
+  group_interval:  3m
+
+  # If an alert has successfully been sent, wait 'repeat_interval' to
+  # resend them.
   repeat_interval: 3m
+
   routes:
   - match:
-    receiver: webhook
+    receiver: kafka-adapter
+    continue: true
   - match:
-    receiver: pingcap-dt
+      env: test-cluster
+    receiver: db-alert-slack
+  - match:
+      env: test-cluster
+    receiver: db-alert-email
 
-  receivers:
-  
-  - name: 'webhook'
+receivers:
+- name: 'kafka-adapter'
   webhook_configs:
-  - send_resolved: false
-    url: 'http://10.0.3.6:28082/v1/alertmanager'
-    
+  - send_resolved: true
+    url: 'http://172.16.10.49:28082/v1/alertmanager'
 ```
-	
-3. run it 
-	- `./kafka-adapter  -port 28082  -kafka-addres 10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092 -kafka-topic test`
-
-	

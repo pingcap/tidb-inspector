@@ -11,7 +11,7 @@ import (
 	"github.com/unrolled/render"
 )
 
-// AlertData alertmanager base struct
+// AlertData is base structure of alertmanager
 type AlertData struct {
 	Receiver          string `json:"receiver"`
 	Status            string `json:"status"`
@@ -55,7 +55,7 @@ func (r *Run) AlertMsgFromWebhook(w http.ResponseWriter, hr *http.Request) {
 		r.Rdr.Text(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	log.Debugf("get alert data %v", alertData)
+	log.Infof("alert data %+v", alertData)
 	r.AlertMsgs <- alertData
 	r.Rdr.Text(w, http.StatusAccepted, "")
 }

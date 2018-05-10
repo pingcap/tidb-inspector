@@ -18,7 +18,7 @@ import (
 var (
 	port         = flag.Int("port", 28082, "port to listen on for the web interface")
 	kafkaAddress = flag.String("kafka-address", "10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092", "kafka address")
-	kafkaTopic   = flag.String("kafka-topic", "test", "kafka topic")
+	kafkaTopic   = flag.String("kafka-topic", "", "kafka topic")
 	logFile      = flag.String("log-file", "", "log file path")
 	logLevel     = flag.String("log-level", "info", "log level: debug, info, warn, error, fatal")
 	logRotate    = flag.String("log-rotate", "day", "log file rotate type: hour/day")
@@ -60,7 +60,6 @@ func (r *Run) Scheduler() {
 
 func main() {
 	flag.Parse()
-
 	if *kafkaAddress == "" {
 		log.Fatalf("missing parameter: -kafka-address")
 	}
@@ -86,11 +85,11 @@ func main() {
 		return
 	}
 	go r.Scheduler()
-	go func() {
-		log.Infof("create http server")
-		r.CreateRender()
-		http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter())
-	}()
+
+	log.Infof("create http server")
+	r.CreateRender()
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter()))
+
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc,
 		syscall.SIGHUP,
@@ -100,6 +99,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	go func() {
 		sig := <-sc
 		log.Errorf("Got signal [%d] to exit.", sig)

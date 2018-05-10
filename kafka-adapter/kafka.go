@@ -53,40 +53,41 @@ func (r *Run) CreateKafkaProducer() error {
 	return err
 }
 
-//PushKafkaMsg push message to kafka cluster
+//PushKafkaMsg pushes message to kafka cluster
 func (r *Run) PushKafkaMsg(msg string) error {
 	kafkaMsg := &sarama.ProducerMessage{
 		Topic: *kafkaTopic,
 		Value: sarama.StringEncoder(msg),
 	}
-	log.Debugf("get kafka mssage %s", msg)
+	log.Infof("sending message %s to kafka", msg)
 	_, _, err := r.KafkaClient.SendMessage(kafkaMsg)
 	return err
 }
 
-//TransferData transfers alert to kafka string
+//TransferData transfers AlertData to string and sends message to kafka
 func (r *Run) TransferData(ad *AlertData) {
-	for _, at := range ad.Alerts {
+	for _, alert := range ad.Alerts {
 		kafkaMsg := &KafkaMsg{
-			Title:       getValue(at.Labels, "alertname"),
-			Description: getValue(at.Annotations, "description"),
-			Expr:        getValue(at.Labels, "expr"),
-			Level:       getValue(at.Labels, "level"),
-			Node:        getValue(at.Labels, "instance"),
-			Source:      getValue(at.Labels, "env"),
-			Value:       getValue(at.Annotations, "value"),
-			Note:        getValue(at.Annotations, "summary"),
-			URL:         at.GeneratorURL,
-			Time:        at.StartsAt.Format(timeFormat),
+			Title:       getValue(alert.Labels, "alertname"),
+			Description: getValue(alert.Annotations, "description"),
+			Expr:        getValue(alert.Labels, "expr"),
+			Level:       getValue(alert.Labels, "level"),
+			Node:        getValue(alert.Labels, "instance"),
+			Source:      getValue(alert.Labels, "env"),
+			Value:       getValue(alert.Annotations, "value"),
+			Note:        getValue(alert.Annotations, "summary"),
+			URL:         alert.GeneratorURL,
+			Time:        alert.StartsAt.Format(timeFormat),
 		}
-		atByte, err := json.Marshal(kafkaMsg)
+
+		alertByte, err := json.Marshal(kafkaMsg)
 		if err != nil {
-			log.Errorf("can not marshal data with error %v", err)
+			log.Errorf("can not marshal KafkaMsg with error %v", err)
 			continue
 		}
 
-		if err := r.PushKafkaMsg(string(atByte)); err != nil {
-			log.Errorf("push message to kafka error %v", err)
+		if err := r.PushKafkaMsg(string(alertByte)); err != nil {
+			log.Errorf("sending message to kafka with error %v", err)
 		}
 	}
 }

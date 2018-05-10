@@ -67,7 +67,7 @@ func main() {
 
 	go func() {
 		sig := <-sc
-		log.Errorf("Got signal [%d] to exit.", sig)
+		log.Errorf("got signal [%d] to exit", sig)
 		r.KafkaClient.Close()
 		wg.Done()
 	}()

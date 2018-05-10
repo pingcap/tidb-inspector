@@ -17,7 +17,7 @@ import (
 
 var (
 	port         = flag.Int("port", 28082, "port to listen on for the web interface")
-	kafkaAddress = flag.String("kafka-address", "10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092", "kafka address")
+	kafkaAddress = flag.String("kafka-address", "", "kafka address, example: 10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092")
 	kafkaTopic   = flag.String("kafka-topic", "", "kafka topic")
 	logFile      = flag.String("log-file", "", "log file path")
 	logLevel     = flag.String("log-level", "info", "log level: debug, info, warn, error, fatal")
@@ -80,13 +80,13 @@ func main() {
 	r := &Run{
 		AlertMsgs: make(chan *AlertData, 1000),
 	}
-	if err := r.CreateKafkaProduce(); err != nil {
-		log.Errorf("create kafka produce error %v", err)
+	if err := r.CreateKafkaProducer(); err != nil {
+		log.Errorf("create kafka producer with error %v", err)
 		return
 	}
 	go r.Scheduler()
 
-	log.Infof("create http server")
+	log.Infof("create a http server serving at %s", *port)
 	r.CreateRender()
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), r.CreateRouter()))
 

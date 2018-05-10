@@ -12,8 +12,8 @@ const (
 	timeFormat = "2006-01-02 15:04:05"
 )
 
-//CreateKafkaProduce create a kafka produce
-func (r *Run) CreateKafkaProduce() error {
+//CreateKafkaProducer creates a new SyncProducer using the given broker addresses and configuration
+func (r *Run) CreateKafkaProducer() error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForLocal
 	config.Producer.Return.Successes = true
@@ -34,7 +34,7 @@ func (r *Run) PushKafkaMsg(msg string) error {
 	return err
 }
 
-//TransferData transfer alert to kafka string
+//TransferData transfers alert to kafka string
 func (r *Run) TransferData(ad *AlertData) {
 	for _, at := range ad.Alerts {
 		kafkaMsg := &KafkaMsg{

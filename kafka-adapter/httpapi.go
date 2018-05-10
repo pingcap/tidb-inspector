@@ -46,7 +46,7 @@ func (r *Run) AlertMsgFromWebhook(w http.ResponseWriter, hr *http.Request) {
 		r.Rdr.Text(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	log.Debugf("get alert data b %v", string(b))
+	log.Infof("get alert data b %v", string(b))
 	defer hr.Body.Close()
 	alertData := &AlertData{}
 	err = json.Unmarshal(b, alertData)
@@ -60,7 +60,7 @@ func (r *Run) AlertMsgFromWebhook(w http.ResponseWriter, hr *http.Request) {
 	r.Rdr.Text(w, http.StatusAccepted, "")
 }
 
-//CreateRouter create router
+//CreateRouter creates router
 func (r *Run) CreateRouter() *mux.Router {
 	m := mux.NewRouter()
 	m.HandleFunc("/v1/alertmanager", r.AlertMsgFromWebhook).Methods("POST")
@@ -68,7 +68,7 @@ func (r *Run) CreateRouter() *mux.Router {
 	return m
 }
 
-// CreateRender for render.
+//CreateRender for render.
 func (r *Run) CreateRender() {
 	r.Rdr = render.New(render.Options{
 		IndentJSON: true,

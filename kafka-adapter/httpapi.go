@@ -64,7 +64,7 @@ func (r *Run) AlertMsgFromWebhook(w http.ResponseWriter, hr *http.Request) {
 	log.Infof("alert data %+v", alertData)
 
 	r.AlertMsgs <- alertData
-	r.Rdr.Text(w, http.StatusAccepted, "")
+	r.Rdr.Text(w, http.StatusAccepted, "success")
 }
 
 // CreateRouter creates router

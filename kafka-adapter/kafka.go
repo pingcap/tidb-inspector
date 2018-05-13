@@ -112,12 +112,10 @@ func (r *Run) TransferData(ad *AlertData) {
 //Scheduler for monitoring chan data
 func (r *Run) Scheduler() {
 	for {
-		lenAlertMsgs := len(r.AlertMsgs)
-		if lenAlertMsgs > 0 {
-			for i := 0; i < lenAlertMsgs; i++ {
-				r.TransferData(<-r.AlertMsgs)
-			}
+		for alert := range r.AlertMsgs {
+			r.TransferData(alert)
 		}
+
 		time.Sleep(3 * time.Second)
 	}
 }

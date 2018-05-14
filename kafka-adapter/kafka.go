@@ -19,7 +19,7 @@ const (
 //KafkaMsg represents kafka message
 type KafkaMsg struct {
 	Title       string `json:"event_object"`
-	Source      string `json:"objec_name"`
+	Source      string `json:"object_name"`
 	Instance    string `json:"object_ip"`
 	Description string `json:"event_msg"`
 	Time        string `json:"event_time"`

@@ -63,7 +63,6 @@ func main() {
 	go func() {
 		sig := <-sc
 		log.Infof("got signal [%d] to exit", sig)
-		close(r.AlertMsgs)
 		r.KafkaClient.Close()
 		os.Exit(0)
 	}()

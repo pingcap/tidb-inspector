@@ -18,16 +18,16 @@ const (
 
 //KafkaMsg represents kafka message
 type KafkaMsg struct {
-	Title       string `json:"title"`
-	Source      string `json:"source"`
-	Node        string `json:"node"`
+	Title       string `json:"event_object"`
+	Source      string `json:"objec_name"`
+	Instance    string `json:"object_ip"`
+	Description string `json:"event_msg"`
+	Time        string `json:"event_time"`
+	Level       string `json:"event_level"`
+	Summary     string `json:"summary"`
 	Expr        string `json:"expr"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-	Level       string `json:"level"`
-	Note        string `json:"note"`
 	Value       string `json:"value"`
-	Time        string `json:"time"`
+	URL         string `json:"url"`
 }
 
 //Run represents runtime information
@@ -86,15 +86,15 @@ func (r *Run) TransferData(ad *AlertData) {
 	for _, alert := range ad.Alerts {
 		kafkaMsg := &KafkaMsg{
 			Title:       getValue(alert.Labels, "alertname"),
-			Description: getValue(alert.Annotations, "description"),
-			Expr:        getValue(alert.Labels, "expr"),
-			Level:       getValue(alert.Labels, "level"),
-			Node:        getValue(alert.Labels, "instance"),
 			Source:      getValue(alert.Labels, "env"),
-			Value:       getValue(alert.Annotations, "value"),
-			Note:        getValue(alert.Annotations, "summary"),
-			URL:         alert.GeneratorURL,
+			Instance:    getValue(alert.Labels, "instance"),
+			Description: getValue(alert.Annotations, "description"),
 			Time:        alert.StartsAt.Format(timeFormat),
+			Level:       getValue(alert.Labels, "level"),
+			Summary:     getValue(alert.Annotations, "summary"),
+			Expr:        getValue(alert.Labels, "expr"),
+			Value:       getValue(alert.Annotations, "value"),
+			URL:         alert.GeneratorURL,
 		}
 
 		alertByte, err := json.Marshal(kafkaMsg)

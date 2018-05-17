@@ -42,7 +42,7 @@ func (r *Run) CreateKafkaProducer(addrs []string) error {
 	for i := 0; i < maxRetry; i++ {
 		config := sarama.NewConfig()
 		config.Producer.Return.Successes = true
-		config.Producer.RequiredAcks = sarama.WaitForLocal
+		config.Producer.RequiredAcks = sarama.WaitForAll
 
 		r.KafkaClient, err = sarama.NewSyncProducer(addrs, config)
 
@@ -103,10 +103,9 @@ func (r *Run) Scheduler() {
 	log.Infof("tcp_prober config: %+v", probeConfig)
 	for {
 		for service, attr := range probeConfig.Service {
-			fmt.Printf("%s -> %s\n", service, attr.Addr)
-			probeStatus := probeTCP(attr.Addr)
-			if !probeStatus {
-				log.Errorf("probeTCP: %s", attr.Summary)
+			aliveStatus := probeTCP(attr.Addr)
+			if !aliveStatus {
+				log.Errorf("Failed to dial %s, alert summary is %s", attr.Addr, attr.Summary)
 				r.TransferData(attr.Alertname, *clusterName, attr.Addr, attr.Level, attr.Summary)
 			}
 		}

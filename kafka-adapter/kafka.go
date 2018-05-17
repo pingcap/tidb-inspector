@@ -51,7 +51,7 @@ func (r *Run) CreateKafkaProducer(addrs []string) error {
 	for i := 0; i < maxRetry; i++ {
 		config := sarama.NewConfig()
 		config.Producer.Return.Successes = true
-		config.Producer.RequiredAcks = sarama.WaitForLocal
+		config.Producer.RequiredAcks = sarama.WaitForAll
 
 		r.KafkaClient, err = sarama.NewSyncProducer(addrs, config)
 

@@ -31,7 +31,7 @@ func probeTCP(target string) bool {
 			time.Sleep(retryDialInterval)
 			continue
 		}
-		log.Info("Successfully dialed")
+		log.Infof("Successfully dialed %s", target)
 		return true
 	}
 	return false

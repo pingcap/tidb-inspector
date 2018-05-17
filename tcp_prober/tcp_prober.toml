@@ -1,0 +1,15 @@
+## tcp_prober Configuration
+
+[service]
+
+[service.prometheus]
+addr = "172.16.10.49:9090"
+alertname = "Prometheus_is_down"
+summary = "Prometheus is down"
+level = "emergency"
+
+[service.alertmanager]
+addr = "172.16.10.49:9093"
+alertname = "Alertmanager_is_down"
+summary = "Alertmanager is down"
+level = "emergency"

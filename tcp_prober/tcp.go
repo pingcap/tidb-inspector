@@ -9,7 +9,7 @@ import (
 
 const (
 	probeDialTimeout  = 5 * time.Second
-	maxDialRetry      = 3
+	maxDialRetry      = 12
 	retryDialInterval = 5 * time.Second
 )
 

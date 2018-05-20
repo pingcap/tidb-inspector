@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -93,8 +92,13 @@ func (r *Run) TransferData(alertname, env, instance, level, summary string) {
 		return
 	}
 
-	if err := r.PushKafkaMsg(string(alertByte)); err != nil {
-		log.Errorf("Failed to produce message to kafka cluster: %v", err)
+	for i := 0; i < maxRetry; i++ {
+		if err := r.PushKafkaMsg(string(alertByte)); err != nil {
+			log.Errorf("Failed to produce message to kafka cluster: %v", err)
+			time.Sleep(retryInterval)
+			continue
+		}
+		return
 	}
 }
 
@@ -102,7 +106,7 @@ func (r *Run) TransferData(alertname, env, instance, level, summary string) {
 func (r *Run) Scheduler() {
 	log.Infof("tcp_prober config: %+v", probeConfig)
 	for {
-		for service, attr := range probeConfig.Service {
+		for _, attr := range probeConfig.Service {
 			aliveStatus := probeTCP(attr.Addr)
 			if !aliveStatus {
 				log.Errorf("Failed to dial %s, alert summary is %s", attr.Addr, attr.Summary)

@@ -103,8 +103,13 @@ func (r *Run) TransferData(ad *AlertData) {
 			continue
 		}
 
-		if err := r.PushKafkaMsg(string(alertByte)); err != nil {
-			log.Errorf("Failed to produce message to kafka cluster: %v", err)
+		for i := 0; i < maxRetry; i++ {
+			if err := r.PushKafkaMsg(string(alertByte)); err != nil {
+				log.Errorf("Failed to produce message to kafka cluster: %v", err)
+				time.Sleep(retryInterval)
+				continue
+			}
+			return
 		}
 	}
 }

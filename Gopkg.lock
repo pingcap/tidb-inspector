@@ -14,34 +14,10 @@
   version = "v1.16.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/araddon/dateparse"
-  packages = ["."]
-  revision = "647d17def28afa02fecb88c69e1efda146c4ec8a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/beorn7/perks"
-  packages = ["quantile"]
-  revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/drael/GOnetstat"
-  packages = ["."]
-  revision = "a08125f5157d481dd0d0355c021467bd8c84eb6d"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/dustin/go-humanize"
-  packages = ["."]
-  revision = "bb3d318650d48840a39aa21a027c6630e198e626"
 
 [[projects]]
   name = "github.com/eapache/go-resiliency"
@@ -60,18 +36,6 @@
   packages = ["."]
   revision = "44cc805cf13205b55f69e14bcb69867d1ae92f98"
   version = "v1.1.0"
-
-[[projects]]
-  name = "github.com/go-sql-driver/mysql"
-  packages = ["."]
-  revision = "a0583e0143b1624142adab07e0e97fe106d99561"
-  version = "v1.3"
-
-[[projects]]
-  name = "github.com/golang/protobuf"
-  packages = ["proto"]
-  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -110,12 +74,6 @@
   revision = "c7d06af17c68cd34c835053720b21f6549d9b0ee"
 
 [[projects]]
-  name = "github.com/matttproud/golang_protobuf_extensions"
-  packages = ["pbutil"]
-  revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/ngaut/log"
   packages = ["."]
@@ -140,58 +98,6 @@
   version = "v0.1.1"
 
 [[projects]]
-  branch = "siddontang/peer-state"
-  name = "github.com/pingcap/kvproto"
-  packages = [
-    "pkg/eraftpb",
-    "pkg/metapb",
-    "pkg/pdpb"
-  ]
-  revision = "4a653174bf7061d775064cbe9f9d7550a9daa0a8"
-
-[[projects]]
-  name = "github.com/pingcap/pd"
-  packages = ["pkg/typeutil"]
-  revision = "137fa734472a76c509fbfd9cb9bc6d0dc804a3b7"
-  version = "v1.0.8"
-
-[[projects]]
-  name = "github.com/prometheus/client_golang"
-  packages = [
-    "prometheus",
-    "prometheus/push"
-  ]
-  revision = "c5b7fccd204277076155f10851dad72b76a49317"
-  version = "v0.8.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/prometheus/client_model"
-  packages = ["go"]
-  revision = "99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/prometheus/common"
-  packages = [
-    "expfmt",
-    "internal/bitbucket.org/ww/goautoneg",
-    "model"
-  ]
-  revision = "38c53a9f4bfcd932d1b00bfc65e256a7fba6b37a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/prometheus/procfs"
-  packages = [
-    ".",
-    "internal/util",
-    "nfs",
-    "xfs"
-  ]
-  revision = "780932d4fbbe0e69b84c34c20f5c8d0981e109ea"
-
-[[projects]]
   branch = "master"
   name = "github.com/rcrowley/go-metrics"
   packages = ["."]
@@ -205,12 +111,6 @@
     "fontmaker/core"
   ]
   revision = "55ea01955b8489e8aae0f85d4aaa0ae72ace0053"
-
-[[projects]]
-  name = "github.com/sirupsen/logrus"
-  packages = ["."]
-  revision = "418b41d23a1bf978c06faea5313ba194650ac088"
-  version = "v0.8.7"
 
 [[projects]]
   name = "github.com/smartystreets/assertions"
@@ -241,6 +141,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "09275b68f5db34286e6c5af3b9c1837d969b2f377c01e91b372187dc81e6acb4"
+  inputs-digest = "3f2b5cee35a093045ebdc39fe0437a46ea4b43e3c6f2dc53e0de91ff9d636eaa"
   solver-name = "gps-cdcl"
   solver-version = 1

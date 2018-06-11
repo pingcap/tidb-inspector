@@ -30,22 +30,6 @@
   version = "1.16.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/araddon/dateparse"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/drael/GOnetstat"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/dustin/go-humanize"
-
-[[constraint]]
-  name = "github.com/go-sql-driver/mysql"
-  version = "1.3.0"
-
-[[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.1"
 
@@ -56,22 +40,6 @@
 [[constraint]]
   branch = "master"
   name = "github.com/ngaut/log"
-
-[[constraint]]
-  branch = "siddontang/peer-state"
-  name = "github.com/pingcap/kvproto"
-
-[[constraint]]
-  name = "github.com/pingcap/pd"
-  version = "1.0.8"
-
-[[constraint]]
-  name = "github.com/prometheus/client_golang"
-  version = "0.8.0"
-
-[[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "0.8.7"
 
 [[constraint]]
   branch = "master"

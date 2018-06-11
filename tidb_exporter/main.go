@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -30,7 +31,6 @@ type tidbOpts struct {
 func NewExporter(opts tidbOpts) (*Exporter, error) {
 	db, err := accessDatabase(opts.username, opts.password, opts.address, dbname)
 	if err != nil {
-		log.Errorf("access database '%s' error, %v", opts.address, err)
 		return nil, err
 	}
 
@@ -50,12 +50,12 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 // as Prometheus metrics. It implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	var queryError float64
-	err := probeQuery(e.db)
+	label, err := probeQuery(e.db)
 	if err != nil {
 		queryError = 1
 	}
 	ch <- prometheus.MustNewConstMetric(
-		queryErrorDesc, prometheus.GaugeValue, queryError, e.tidbOpts.address,
+		queryErrorDesc, prometheus.GaugeValue, queryError, e.tidbOpts.address, label,
 	)
 }
 
@@ -77,6 +77,16 @@ func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
+	if opts.address == "" {
+		log.Fatalf("missing startup parameter: --tidb.address")
+	}
+	if opts.username == "" {
+		log.Fatalf("missing startup parameter: --tidb.username")
+	}
+	if opts.password == "" {
+		log.Fatalf("--tidb.password startup parameter required and empty password not allowed")
+	}
+
 	log.SetLevelByString(*logLevel)
 	if *logFile != "" {
 		log.SetOutputByName(*logFile)
@@ -90,7 +100,7 @@ func main() {
 	log.Info("Starting tidb_exporter")
 	exporter, err := NewExporter(opts)
 	if err != nil {
-		log.Fatalf("initialize tidb_exporter error, %v", err)
+		log.Fatalf("initialize tidb_exporter error, %v", errors.ErrorStack(err))
 	}
 
 	prometheus.MustRegister(exporter)

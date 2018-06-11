@@ -51,7 +51,7 @@ nohup bin/tidb_exporter \
 
 | Name | Description |
 | ---- | ----------- |
-| `tidb_exporter_tidb_query_error` | Whether an error occurred while sending query to tidb server. Query: `SELECT count(*) FROM mysql.tidb` |
+| `tidb_exporter_tidb_query_error` | Whether an error occurs while sending query to tidb server. Query: `SELECT count(*) FROM mysql.tidb` |
 
 #### Prometheus Configuration
 

@@ -63,9 +63,11 @@ func checkParameters(opts tidbOpts) {
 	if opts.address == "" {
 		log.Fatalf("missing startup parameter: --tidb.address")
 	}
+
 	if opts.username == "" {
 		log.Fatalf("missing startup parameter: --tidb.username")
 	}
+
 	if opts.password == "" {
 		log.Fatalf("--tidb.password startup parameter required and empty password not allowed")
 	}

@@ -44,8 +44,8 @@ func probeQuery(db *sql.DB) (label string, err error) {
 		log.Errorf("database query error, %v", err)
 		return "query", err
 	}
-
 	defer rows.Close()
+
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {

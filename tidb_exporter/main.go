@@ -31,7 +31,7 @@ type tidbOpts struct {
 func NewExporter(opts tidbOpts) (*Exporter, error) {
 	db, err := accessDatabase(opts.username, opts.password, opts.address, dbname)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
 	return &Exporter{
@@ -59,6 +59,18 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	)
 }
 
+func checkParameters(opts tidbOpts) {
+	if opts.address == "" {
+		log.Fatalf("missing startup parameter: --tidb.address")
+	}
+	if opts.username == "" {
+		log.Fatalf("missing startup parameter: --tidb.username")
+	}
+	if opts.password == "" {
+		log.Fatalf("--tidb.password startup parameter required and empty password not allowed")
+	}
+}
+
 func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry").Default(":9200").String()
@@ -77,15 +89,7 @@ func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
-	if opts.address == "" {
-		log.Fatalf("missing startup parameter: --tidb.address")
-	}
-	if opts.username == "" {
-		log.Fatalf("missing startup parameter: --tidb.username")
-	}
-	if opts.password == "" {
-		log.Fatalf("--tidb.password startup parameter required and empty password not allowed")
-	}
+	checkParameters(opts)
 
 	log.SetLevelByString(*logLevel)
 	if *logFile != "" {

@@ -60,5 +60,6 @@ func probeQuery(db *sql.DB) (label string, err error) {
 		log.Errorf("retrieve result sets of query '%s' error, %v", probeSQL, err)
 		return "retrieve", err
 	}
+
 	return "", nil
 }

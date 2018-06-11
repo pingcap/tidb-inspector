@@ -133,7 +133,9 @@ func main() {
 	go func() {
 		sig := <-sc
 		log.Infof("got signal [%d] to exit", sig)
-		exporter.db.Close()
+		if exporter.db != nil {
+			exporter.db.Close()
+		}
 		os.Exit(0)
 	}()
 

@@ -1,4 +1,4 @@
-package report
+package config
 
 import (
 	"github.com/BurntSushi/toml"
@@ -7,26 +7,27 @@ import (
 
 // variables for rendering pdf
 var (
-	ReportConfig = &Config{}
-	FontDir      = ""
+	Cfg = &Config{}
 )
 
 // SetConfig ... parses pdf template configure file
 func SetConfig(configFile string) error {
-	_, err := toml.DecodeFile(configFile, ReportConfig)
+	_, err := toml.DecodeFile(configFile, Cfg)
 	return errors.Trace(err)
-}
-
-// SetFontDir ... sets up ttf font directory
-func SetFontDir(fontDir string) {
-	FontDir = fontDir
 }
 
 // Config ... pdf template config
 type Config struct {
+	Grafana  grafana
 	Font     font
 	Rect     map[string]rect
 	Position position
+}
+
+type grafana struct {
+	Theme         string
+	ClientTimeout int `toml:"client-timeout"`
+	ServerTimeout int `toml:"server-timeout"`
 }
 
 type font struct {

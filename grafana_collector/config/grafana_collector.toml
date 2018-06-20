@@ -1,5 +1,13 @@
 ## grafana_collector Configuration
 
+[grafana]
+# dashboard theme: [dark, light]
+theme = "dark"
+
+# the timeout of the query for rendering panel image, unit: second
+client-timeout = 300
+server-timeout = 300
+
 ## PDF template varialbes
 [font]
 family = "opensans"

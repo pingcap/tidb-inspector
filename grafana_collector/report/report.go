@@ -39,8 +39,21 @@ import (
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pborman/uuid"
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/grafana"
 	"github.com/signintech/gopdf"
+)
+
+var (
+	cfg = config.Cfg
+
+	// FontDir ... ttf font directory
+	FontDir = ""
+)
+
+const (
+	imgDir    = "images"
+	reportPdf = "report.pdf"
 )
 
 // Report groups functions related to genrating the report.
@@ -57,10 +70,10 @@ type report struct {
 	tmpDir   string
 }
 
-const (
-	imgDir    = "images"
-	reportPdf = "report.pdf"
-)
+// SetFontDir ... sets up ttf font directory
+func SetFontDir(fontDir string) {
+	FontDir = fontDir
+}
 
 // New ... creates a new Report
 func New(g grafana.Client, dashName string, time grafana.TimeRange) Report {
@@ -187,16 +200,16 @@ func (rep *report) renderPNG(p grafana.Panel) error {
 // NewPDF ... creates a new PDF and sets font
 func (rep *report) NewPDF() (*gopdf.GoPdf, error) {
 	pdf := &gopdf.GoPdf{}
-	pdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: ReportConfig.Rect["page"].Width, H: ReportConfig.Rect["page"].Height}})
+	pdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: cfg.Rect["page"].Width, H: cfg.Rect["page"].Height}})
 
-	ttfPath := FontDir + ReportConfig.Font.Ttf
-	err := pdf.AddTTFFont(ReportConfig.Font.Family, ttfPath)
+	ttfPath := FontDir + cfg.Font.Ttf
+	err := pdf.AddTTFFont(cfg.Font.Family, ttfPath)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	err = pdf.SetFont(ReportConfig.Font.Family, "", ReportConfig.Font.Size)
+	err = pdf.SetFont(cfg.Font.Family, "", cfg.Font.Size)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -208,22 +221,22 @@ func (rep *report) NewPDF() (*gopdf.GoPdf, error) {
 // createHomePage ... add Home Page for PDF
 func (rep *report) createHomePage(pdf *gopdf.GoPdf, dash grafana.Dashboard) {
 	pdf.AddPage()
-	pdf.SetX(ReportConfig.Position.X)
+	pdf.SetX(cfg.Position.X)
 	pdf.Cell(nil, "Dashboard: "+dash.Title)
-	pdf.Br(ReportConfig.Position.Br)
-	pdf.SetX(ReportConfig.Position.X)
+	pdf.Br(cfg.Position.Br)
+	pdf.SetX(cfg.Position.X)
 	pdf.Cell(nil, rep.time.FromFormatted()+" to "+rep.time.ToFormatted())
 }
 
 func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err error) {
-	log.Infof("PDF templates config: %+v\n", ReportConfig)
+	log.Infof("PDF templates config: %+v\n", cfg)
 
 	pdf, err := rep.NewPDF()
 	rep.createHomePage(pdf, dash)
 
 	// setting rectangle size for grafana panel type: Graph/Singlestat
-	rectGraph := &gopdf.Rect{W: ReportConfig.Rect["graph"].Width, H: ReportConfig.Rect["graph"].Height}
-	rectSinglestat := &gopdf.Rect{W: ReportConfig.Rect["singlestat"].Width, H: ReportConfig.Rect["singlestat"].Height}
+	rectGraph := &gopdf.Rect{W: cfg.Rect["graph"].Width, H: cfg.Rect["graph"].Height}
+	rectSinglestat := &gopdf.Rect{W: cfg.Rect["singlestat"].Width, H: cfg.Rect["singlestat"].Height}
 	rect := &gopdf.Rect{}
 
 	var count int
@@ -238,9 +251,9 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 
 		// Add two images on every page
 		if count%2 == 0 {
-			err = pdf.Image(imgPath, ReportConfig.Position.X, ReportConfig.Position.Y1, rect)
+			err = pdf.Image(imgPath, cfg.Position.X, cfg.Position.Y1, rect)
 		} else {
-			err = pdf.Image(imgPath, ReportConfig.Position.X, ReportConfig.Position.Y2, rect)
+			err = pdf.Image(imgPath, cfg.Position.X, cfg.Position.Y2, rect)
 			pdf.AddPage()
 		}
 		if err != nil {

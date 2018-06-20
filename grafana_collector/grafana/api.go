@@ -39,6 +39,13 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
+)
+
+var (
+	cfg                    = config.Cfg
+	getPanelRetrySleepTime = 10 * time.Second
 )
 
 // Client is a Grafana API client
@@ -54,11 +61,6 @@ type client struct {
 	apiToken         string
 	variables        url.Values
 }
-
-var (
-	getPanelRetrySleepTime = 10 * time.Second
-	getTimeout             = 60 * time.Second
-)
 
 // NewV4Client creates a new Grafana 4 Client. If apiToken is the empty string,
 // authorization headers will be omitted from requests.
@@ -100,7 +102,8 @@ func (g client) GetDashboard(dashName string) (Dashboard, error) {
 	dashURL := g.getDashEndpoint(dashName)
 	log.Infof("Connecting to dashboard at %s", dashURL)
 
-	client := &http.Client{Timeout: getTimeout}
+	clientTimeout := time.Duration(cfg.Grafana.ClientTimeout) * time.Second
+	client := &http.Client{Timeout: clientTimeout}
 	req, err := http.NewRequest("GET", dashURL, nil)
 	if err != nil {
 		return Dashboard{}, fmt.Errorf("error creating getDashboard request for %v: %v", dashURL, err)
@@ -130,11 +133,12 @@ func (g client) GetDashboard(dashName string) (Dashboard, error) {
 func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadCloser, error) {
 	panelURL := g.getPanelURL(p, dashName, t)
 
+	clientTimeout := time.Duration(cfg.Grafana.ClientTimeout) * time.Second
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return errors.New("Error getting panel png. Redirected to login")
 		},
-		Timeout: getTimeout,
+		Timeout: clientTimeout,
 	}
 	req, err := http.NewRequest("GET", panelURL, nil)
 	if err != nil {
@@ -172,7 +176,7 @@ func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadClose
 
 func (g client) getPanelURL(p Panel, dashName string, t TimeRange) string {
 	values := url.Values{}
-	values.Add("theme", "dark")
+	values.Add("theme", cfg.Grafana.Theme)
 	values.Add("panelId", strconv.Itoa(p.ID))
 	values.Add("from", t.From)
 	values.Add("to", t.To)
@@ -183,6 +187,7 @@ func (g client) getPanelURL(p Panel, dashName string, t TimeRange) string {
 		values.Add("width", "1000")
 		values.Add("height", "500")
 	}
+	values.Add("timeout", strconv.Itoa(cfg.Grafana.ServerTimeout))
 
 	for k, v := range g.variables {
 		for _, singleValue := range v {

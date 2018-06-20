@@ -39,6 +39,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ngaut/log"
+	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/grafana"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/report"
 	"github.com/pingcap/tidb-inspect-tools/pkg/utils"
@@ -64,7 +65,7 @@ func main() {
 		return
 	}
 
-	err := report.SetConfig(*configFile)
+	err := config.SetConfig(*configFile)
 	if err != nil {
 		log.Fatalf("parsing configure file error: %v", err)
 	}

@@ -44,8 +44,7 @@ import (
 )
 
 var (
-	cfg                    = config.Cfg
-	getPanelRetrySleepTime = 10 * time.Second
+	cfg = config.Cfg
 )
 
 // Client is a Grafana API client
@@ -153,7 +152,8 @@ func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadClose
 	}
 
 	for retries := 1; retries < 3 && resp.StatusCode != 200; retries++ {
-		delay := getPanelRetrySleepTime * time.Duration(retries)
+		getPanelRetryInterval := time.Duration(cfg.Grafana.RetryInterval) * time.Second
+		delay := getPanelRetryInterval * time.Duration(retries)
 		log.Errorf("Error obtaining render for panel %+v, Status: %v, Retrying after %v...", p, resp.StatusCode, delay)
 		time.Sleep(delay)
 		resp, err = client.Do(req)

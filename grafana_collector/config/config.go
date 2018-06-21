@@ -28,6 +28,7 @@ type grafana struct {
 	Theme         string
 	ClientTimeout int `toml:"client-timeout"`
 	ServerTimeout int `toml:"server-timeout"`
+	RetryInterval int `toml:"retry-interval"`
 }
 
 type font struct {

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/juju/errors"
@@ -17,27 +19,37 @@ import (
 // Exporter collects database query stats and exports them using
 // the prometheus metrics package.
 type Exporter struct {
-	db       *sql.DB
-	tidbOpts tidbOpts
+	nodes []tidbNode
+}
+
+type tidbNode struct {
+	addr string
+	db   *sql.DB
 }
 
 type tidbOpts struct {
-	address  string
-	username string
-	password string
+	addresses string
+	username  string
+	password  string
 }
 
 // NewExporter returns an initialized Exporter.
 func NewExporter(opts tidbOpts) (*Exporter, error) {
-	db, err := accessDatabase(opts.username, opts.password, opts.address, dbname)
-	if err != nil {
-		return nil, errors.Trace(err)
+	addresses := strings.Split(opts.addresses, ",")
+	nodes := []tidbNode{}
+
+	for _, addr := range addresses {
+		db, err := accessDatabase(opts.username, opts.password, addr, dbname)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
+
+		node := tidbNode{addr: addr, db: db}
+		nodes = append(nodes, node)
 	}
 
-	return &Exporter{
-		db:       db,
-		tidbOpts: opts,
-	}, nil
+	log.Infof("monitoring tidb servers: %s", opts.addresses)
+	return &Exporter{nodes: nodes}, nil
 }
 
 // Describe describes all the metrics ever exported by tidb_exporter. It
@@ -49,27 +61,36 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 // Collect fetches database query stats and delivers them
 // as Prometheus metrics. It implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	var queryError float64
-	label, err := probeQuery(e.db)
-	if err != nil {
-		queryError = 1
+	var wg = sync.WaitGroup{}
+
+	getNodeMetrics := func(node tidbNode) {
+		defer wg.Done()
+
+		var queryError float64
+		label, err := probeQuery(node.addr, node.db)
+		if err != nil {
+			queryError = 1
+		}
+		ch <- prometheus.MustNewConstMetric(
+			queryErrorDesc, prometheus.GaugeValue, queryError, node.addr, label,
+		)
 	}
-	ch <- prometheus.MustNewConstMetric(
-		queryErrorDesc, prometheus.GaugeValue, queryError, e.tidbOpts.address, label,
-	)
+
+	for _, node := range e.nodes {
+		wg.Add(1)
+		go getNodeMetrics(node)
+	}
+
+	wg.Wait()
 }
 
 func checkParameters(opts tidbOpts) {
-	if opts.address == "" {
-		log.Fatalf("missing startup parameter: --tidb.address")
+	if opts.addresses == "" {
+		log.Fatalf("missing startup parameter: --tidb.addresses")
 	}
 
 	if opts.username == "" {
 		log.Fatalf("missing startup parameter: --tidb.username")
-	}
-
-	if opts.password == "" {
-		log.Fatalf("--tidb.password startup parameter required and empty password not allowed")
 	}
 }
 
@@ -84,7 +105,7 @@ func main() {
 		opts = tidbOpts{}
 	)
 
-	kingpin.Flag("tidb.address", "Address (host:port) of TiDB server.").Default("").StringVar(&opts.address)
+	kingpin.Flag("tidb.addresses", "Addresses (host:port) of TiDB server nodes, comma separated.").Default("").StringVar(&opts.addresses)
 	kingpin.Flag("tidb.username", "TiDB user name.").Default("").StringVar(&opts.username)
 	kingpin.Flag("tidb.password", "TiDB user password.").Default("").StringVar(&opts.password)
 
@@ -133,9 +154,13 @@ func main() {
 	go func() {
 		sig := <-sc
 		log.Infof("got signal [%d] to exit", sig)
-		if exporter.db != nil {
-			exporter.db.Close()
+
+		for _, node := range exporter.nodes {
+			if node.db != nil {
+				node.db.Close()
+			}
 		}
+
 		os.Exit(0)
 	}()
 

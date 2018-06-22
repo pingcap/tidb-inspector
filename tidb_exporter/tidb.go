@@ -34,14 +34,15 @@ func accessDatabase(username, password, address, dbname string) (*sql.DB, error)
 		return nil, errors.Annotatef(err, "ping database '%s'", dataSourceName)
 	}
 
+	log.Infof("ping database '%s'", address)
 	return db, nil
 }
 
-func probeQuery(db *sql.DB) (label string, err error) {
+func probeQuery(addr string, db *sql.DB) (label string, err error) {
 	var count int
 	rows, err := db.Query(probeSQL)
 	if err != nil {
-		log.Errorf("database query error, %v", err)
+		log.Errorf("<%s> database query error, %v", addr, err)
 		return "query", err
 	}
 	defer rows.Close()
@@ -49,15 +50,15 @@ func probeQuery(db *sql.DB) (label string, err error) {
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			log.Errorf("scan result sets of query '%s' error, %v", probeSQL, err)
+			log.Errorf("<%s> scan result sets of query '%s' error, %v", addr, probeSQL, err)
 			return "scan", err
 		}
-		log.Infof("database query: %s, result sets: %d", probeSQL, count)
+		log.Infof("<%s> database query: %s, result sets: %d", addr, probeSQL, count)
 	}
 
 	err = rows.Err()
 	if err != nil {
-		log.Errorf("retrieve result sets of query '%s' error, %v", probeSQL, err)
+		log.Errorf("<%s> retrieve result sets of query '%s' error, %v", addr, probeSQL, err)
 		return "retrieve", err
 	}
 

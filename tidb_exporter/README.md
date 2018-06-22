@@ -1,7 +1,7 @@
 TiDB exporter
 ------
 
-TiDB exporter for Prometheus. The `tidb_exporter` will expose metrics via HTTP on the `/metrics` endpoint. Currently only one tidb server address is supported. It is recommended to set load balancing IP. We'll support multiple tidb servers in the near future.
+TiDB exporter for Prometheus. Checking tidb server's health by sending SQL query to it. The `tidb_exporter` will expose metrics via HTTP on the `/metrics` endpoint. 
 
 #### Required Grants
 
@@ -23,24 +23,24 @@ $ ./tidb_exporter -h
 usage: tidb_exporter [<flags>]
 
 Flags:
-  -h, --help              Show context-sensitive help (also try --help-long and --help-man).
-      --web.listen-address=":9200"
-                          Address to listen on for web interface and telemetry
+  -h, --help               Show context-sensitive help (also try --help-long and --help-man).
+      --web.listen-address=":9500"
+                           Address to listen on for web interface and telemetry
       --web.telemetry-path="/metrics"
-                          Path under which to expose metrics.
-      --log-file=""       Log file path.
-      --log-level="info"  Log level: debug, info, warn, error, fatal.
-      --log-rotate="day"  Log file rotate type: hour/day.
-      --tidb.address=""   Address (host:port) of TiDB server.
-      --tidb.username=""  TiDB user name.
-      --tidb.password=""  TiDB user password.
+                           Path under which to expose metrics.
+      --log-file=""        Log file path.
+      --log-level="info"   Log level: debug, info, warn, error, fatal.
+      --log-rotate="day"   Log file rotate type: hour/day.
+      --tidb.addresses=""  Addresses (host:port) of TiDB server nodes, comma separated.
+      --tidb.username=""   TiDB user name.
+      --tidb.password=""   TiDB user password.
 ```
 
 ```
 nohup bin/tidb_exporter \
-    --web.listen-address=":9200" \
+    --web.listen-address=":9500" \
     --web.telemetry-path="/metrics" \
-    --tidb.address="172.16.10.71:4000" \
+    --tidb.addresses="172.16.10.71:4000,172.16.10.72:4000" \
     --tidb.username="tidb_exporter" \
     --tidb.password="XXXXXXXX"
     --log-level="info" \

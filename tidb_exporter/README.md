@@ -1,7 +1,7 @@
 TiDB exporter
 ------
 
-TiDB exporter for Prometheus. Checking tidb server's health by sending SQL query to it. The `tidb_exporter` will expose metrics via HTTP on the `/metrics` endpoint. 
+TiDB exporter (for Prometheus) is a tool for checking the TiDB server's health by sending SQL queries to it. The tidb_exporter exposes metrics via HTTP on the /metrics endpoint. 
 
 #### Required Grants
 
@@ -31,7 +31,7 @@ Flags:
       --log-file=""        Log file path.
       --log-level="info"   Log level: debug, info, warn, error, fatal.
       --log-rotate="day"   Log file rotate type: hour/day.
-      --tidb.addresses=""  Addresses (host:port) of TiDB server nodes, comma separated.
+      --tidb.addrs=""  Addresses (host:port) of TiDB server nodes, comma separated.
       --tidb.username=""   TiDB user name.
       --tidb.password=""   TiDB user password.
 ```
@@ -40,7 +40,7 @@ Flags:
 nohup bin/tidb_exporter \
     --web.listen-address=":9500" \
     --web.telemetry-path="/metrics" \
-    --tidb.addresses="172.16.10.71:4000,172.16.10.72:4000" \
+    --tidb.addrs="172.16.10.71:4000,172.16.10.72:4000" \
     --tidb.username="tidb_exporter" \
     --tidb.password="XXXXXXXX"
     --log-level="info" \

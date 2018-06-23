@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,17 +29,40 @@ type tidbNode struct {
 }
 
 type tidbOpts struct {
-	addresses string
-	username  string
-	password  string
+	addrs    string
+	username string
+	password string
+}
+
+// ParseHostPortAddr returns a host:port list
+func ParseHostPortAddr(s string) ([]string, error) {
+	strs := strings.Split(s, ",")
+	addrs := make([]string, 0, len(strs))
+
+	for _, str := range strs {
+		str = strings.TrimSpace(str)
+
+		host, port, err := net.SplitHostPort(str)
+		if err != nil || host == "" || port == "" {
+			return nil, errors.Errorf(`address does not have the form "host:port": %s`, str)
+		}
+
+		addrs = append(addrs, str)
+	}
+
+	return addrs, nil
 }
 
 // NewExporter returns an initialized Exporter.
 func NewExporter(opts tidbOpts) (*Exporter, error) {
-	addresses := strings.Split(opts.addresses, ",")
-	nodes := []tidbNode{}
 
-	for _, addr := range addresses {
+	addrs, err := ParseHostPortAddr(opts.addrs)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := []tidbNode{}
+	for _, addr := range addrs {
 		db, err := accessDatabase(opts.username, opts.password, addr, dbname)
 		if err != nil {
 			return nil, errors.Trace(err)
@@ -48,7 +72,7 @@ func NewExporter(opts tidbOpts) (*Exporter, error) {
 		nodes = append(nodes, node)
 	}
 
-	log.Infof("monitoring tidb servers: %s", opts.addresses)
+	log.Infof("monitoring tidb servers: %s", opts.addrs)
 	return &Exporter{nodes: nodes}, nil
 }
 
@@ -85,8 +109,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func checkParameters(opts tidbOpts) {
-	if opts.addresses == "" {
-		log.Fatalf("missing startup parameter: --tidb.addresses")
+	if opts.addrs == "" {
+		log.Fatalf("missing startup parameter: --tidb.addrs")
 	}
 
 	if opts.username == "" {
@@ -105,7 +129,7 @@ func main() {
 		opts = tidbOpts{}
 	)
 
-	kingpin.Flag("tidb.addresses", "Addresses (host:port) of TiDB server nodes, comma separated.").Default("").StringVar(&opts.addresses)
+	kingpin.Flag("tidb.addrs", "Addresses (host:port) of TiDB server nodes, comma separated.").Default("").StringVar(&opts.addrs)
 	kingpin.Flag("tidb.username", "TiDB user name.").Default("").StringVar(&opts.username)
 	kingpin.Flag("tidb.password", "TiDB user password.").Default("").StringVar(&opts.password)
 

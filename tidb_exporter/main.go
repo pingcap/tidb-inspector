@@ -44,7 +44,7 @@ func ParseHostPortAddr(s string) ([]string, error) {
 
 		host, port, err := net.SplitHostPort(str)
 		if err != nil || host == "" || port == "" {
-			return nil, errors.Errorf(`address does not have the form "host:port": %s`, str)
+			return nil, errors.Errorf(`tidb.addrs does not have the form "host:port": %s`, str)
 		}
 
 		addrs = append(addrs, str)

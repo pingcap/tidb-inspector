@@ -137,6 +137,12 @@
   version = "v0.1.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/pingcap/check"
+  packages = ["."]
+  revision = "1c287c953996ab3a0bf535dba9d53d809d3dc0b6"
+
+[[projects]]
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
@@ -222,6 +228,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3c36885eceec0b60d543fe5b0d8bd711bf0c864578e9b44db6e8713751de8b0c"
+  inputs-digest = "e880d74bf5456b8fbcbe5daa1b00ed88a401d347a85b88bb0b4a84631ce225e9"
   solver-name = "gps-cdcl"
   solver-version = 1

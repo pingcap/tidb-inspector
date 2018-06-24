@@ -35,7 +35,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -132,10 +131,6 @@ func TestGrafanaClientFetchesPanelPNG(t *testing.T) {
 		}
 
 	})
-}
-
-func init() {
-	getPanelRetrySleepTime = time.Duration(1) * time.Millisecond //we want our tests to run fast
 }
 
 func TestGrafanaClientFetchPanelPNGErrorHandling(t *testing.T) {

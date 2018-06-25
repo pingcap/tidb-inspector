@@ -1,7 +1,7 @@
 TiDB exporter
 ------
 
-TiDB exporter (for Prometheus) is a tool for checking the TiDB server's health by sending SQL queries to it. The tidb_exporter exposes metrics via HTTP on the /metrics endpoint. 
+TiDB exporter (for Prometheus) is a tool for checking the TiDB server's health by sending SQL queries to it. The `tidb_exporter` exposes metrics via HTTP on the `/metrics` endpoint. 
 
 #### Required Grants
 

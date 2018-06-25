@@ -61,7 +61,7 @@ func NewExporter(opts tidbOpts) (*Exporter, error) {
 		return nil, err
 	}
 
-	nodes := []tidbNode{}
+	nodes := make([]tidbNode, 0, len(addrs))
 	for _, addr := range addrs {
 		db, err := accessDatabase(opts.username, opts.password, addr, dbname)
 		if err != nil {

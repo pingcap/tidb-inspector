@@ -42,7 +42,7 @@ func ParseHostPortAddr(s string) ([]string, error) {
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
 
-		host, port, err := net.SplitHostPort(str)
+		_, _, err := net.SplitHostPort(str)
 		if err != nil {
 			return nil, errors.Annotatef(err, `tidb.addrs does not have the form "host:port": %s`, str)
 		}

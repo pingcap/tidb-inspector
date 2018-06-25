@@ -55,7 +55,6 @@ func ParseHostPortAddr(s string) ([]string, error) {
 
 // NewExporter returns an initialized Exporter.
 func NewExporter(opts tidbOpts) (*Exporter, error) {
-
 	addrs, err := ParseHostPortAddr(opts.addrs)
 	if err != nil {
 		return nil, errors.Trace(err)

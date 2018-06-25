@@ -44,7 +44,7 @@ func ParseHostPortAddr(s string) ([]string, error) {
 
 		host, port, err := net.SplitHostPort(str)
 		if err != nil || host == "" || port == "" {
-			return nil, errors.Errorf(`tidb.addrs does not have the form "host:port": %s`, str)
+			return nil, errors.Annotatef(err, `tidb.addrs does not have the form "host:port": %s`, str)
 		}
 
 		addrs = append(addrs, str)
@@ -58,10 +58,10 @@ func NewExporter(opts tidbOpts) (*Exporter, error) {
 
 	addrs, err := ParseHostPortAddr(opts.addrs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
-	nodes := []tidbNode{}
+	nodes := make([]tidbNode, 0, len(addrs))
 	for _, addr := range addrs {
 		db, err := accessDatabase(opts.username, opts.password, addr, dbname)
 		if err != nil {

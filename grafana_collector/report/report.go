@@ -45,7 +45,7 @@ import (
 )
 
 var (
-	cfg = config.Cfg
+	cfg = config.GetGlobalConfig()
 
 	// FontDir ... ttf font directory
 	FontDir = ""

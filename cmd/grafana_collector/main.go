@@ -57,6 +57,10 @@ var (
 	printVersion = flag.Bool("V", false, "prints version and exit")
 )
 
+var (
+	cfg *config.Config
+)
+
 func main() {
 	flag.Parse()
 
@@ -65,9 +69,12 @@ func main() {
 		return
 	}
 
-	err := config.SetConfig(*configFile)
-	if err != nil {
-		log.Fatalf("parsing configure file error: %v", err)
+	cfg = config.GetGlobalConfig()
+	if *configFile != "" {
+		err := cfg.SetConfig(*configFile)
+		if err != nil {
+			log.Fatalf("parsing configure file error: %v", err)
+		}
 	}
 
 	if *fontDir == "" {

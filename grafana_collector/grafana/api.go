@@ -44,7 +44,7 @@ import (
 )
 
 var (
-	cfg = config.Cfg
+	cfg = config.GetGlobalConfig()
 )
 
 // Client is a Grafana API client

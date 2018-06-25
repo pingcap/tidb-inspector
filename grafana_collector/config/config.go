@@ -5,18 +5,7 @@ import (
 	"github.com/juju/errors"
 )
 
-// variables for rendering pdf
-var (
-	Cfg = &Config{}
-)
-
-// SetConfig ... parses pdf template configure file
-func SetConfig(configFile string) error {
-	_, err := toml.DecodeFile(configFile, Cfg)
-	return errors.Trace(err)
-}
-
-// Config ... pdf template config
+// Config contains configuration options.
 type Config struct {
 	Grafana  grafana
 	Font     font
@@ -47,4 +36,51 @@ type position struct {
 	Y1 float64
 	Y2 float64
 	Br float64
+}
+
+var defaultConf = Config{
+	Grafana: grafana{
+		Theme:         "dark",
+		ClientTimeout: 300,
+		ServerTimeout: 300,
+		RetryInterval: 10,
+	},
+	Font: font{
+		Family: "opensans",
+		Ttf:    "OpenSans-Regular.ttf",
+		Size:   14,
+	},
+	Rect: map[string]rect{
+		"page": {
+			Width:  595.28,
+			Height: 841.89,
+		},
+		"graph": {
+			Width:  480.0,
+			Height: 240.0,
+		},
+		"singlestat": {
+			Width:  300.0,
+			Height: 150.0,
+		},
+	},
+	Position: position{
+		X:  50.0,
+		Y1: 80.0,
+		Y2: 350.0,
+		Br: 20.0,
+	},
+}
+
+var globalConf = defaultConf
+
+// GetGlobalConfig returns the global configuration for this server.
+func GetGlobalConfig() *Config {
+	return &globalConf
+}
+
+// SetConfig ... loads config options from a toml file.
+func (c *Config) SetConfig(configFile string) error {
+	_, err := toml.DecodeFile(configFile, c)
+	return errors.Trace(err)
 }

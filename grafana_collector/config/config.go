@@ -74,7 +74,7 @@ var defaultConf = Config{
 
 var globalConf = defaultConf
 
-// GetGlobalConfig returns the global configuration for this server.
+// GetGlobalConfig returns global configurations.
 func GetGlobalConfig() *Config {
 	return &globalConf
 }

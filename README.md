@@ -1,7 +1,7 @@
 tidb-inspect-tools
 ------
 
-tidb-inspect-tools are some useful tool collections for TiDB.
+tidb-inspect-tools are some useful inspection tool collections for TiDB.
 
 ## Tool list
 

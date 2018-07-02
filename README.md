@@ -11,7 +11,7 @@ tidb-inspect-tools are some useful inspection tool collections for TiDB.
 
 - [kafka_adapter](https://github.com/pingcap/tidb-inspect-tools/tree/master/kafka_adapter)
 
-  Alertmanager webhook receiver for the kafka service.
+  Alertmanager webhook receiver for the Kafka service.
 
 - [syslog_adapter](https://github.com/pingcap/tidb-inspect-tools/tree/master/syslog_adapter)
 
@@ -23,7 +23,7 @@ tidb-inspect-tools are some useful inspection tool collections for TiDB.
 
 - [tidb_exporter](https://github.com/pingcap/tidb-inspect-tools/tree/master/tidb_exporter)
 
-  A tool for checking the TiDB server's health by sending SQL queries to it. The `tidb_exporter` exposes metrics via HTTP on the /metrics endpoint for Prometheus.
+  A tool for checking the TiDB server's health by sending SQL queries to it. The `tidb_exporter` exposes metrics via HTTP on the `/metrics` endpoint for Prometheus.
 
 ## License
 Apache 2.0 license. See the [LICENSE](https://github.com/pingcap/tidb-inspect-tools/blob/master/LICENSE) file for details.

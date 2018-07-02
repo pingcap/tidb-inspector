@@ -1,10 +1,10 @@
-kafka-adapter 
+kafka_adapter 
 ------
 
 ### Usages
 
 ```
-Usage of ./kafka-adapter:
+Usage of ./kafka_adapter:
   -kafka-address string
     	kafka address, example: 10.0.3.4:9092,10.0.3.5:9092,10.0.3.6:9092
   -kafka-topic string
@@ -23,9 +23,9 @@ Usage of ./kafka-adapter:
 
 ```
 #!/bin/bash
-nohup ./kafka-adapter \
+nohup ./kafka_adapter \
     --log-level="info" \
-    --log-file="kafka-adapter.log" \
+    --log-file="kafka_adapter.log" \
     --kafka-address="172.16.10.50:9092,172.16.10.61:9092,172.16.10.62:9092" \
     --kafka-topic="test" &
 ```
@@ -57,7 +57,7 @@ route:
 
   routes:
   - match:
-    receiver: kafka-adapter
+    receiver: kafka_adapter
     continue: true
   - match:
       env: test-cluster
@@ -67,7 +67,7 @@ route:
     receiver: db-alert-email
 
 receivers:
-- name: 'kafka-adapter'
+- name: 'kafka_adapter'
   webhook_configs:
   - send_resolved: true
     url: 'http://172.16.10.49:28082/v1/alertmanager'

@@ -78,7 +78,7 @@ func main() {
 	}
 
 	sysLog, err := syslog.Dial(*network, *syslogAddress,
-		syslog.LOG_CRIT|syslog.LOG_USER, "syslog-adapter")
+		syslog.LOG_CRIT|syslog.LOG_USER, "syslog_adapter")
 	if err != nil {
 		log.Fatalf("Failed to connect to syslog service: %v", err)
 	}

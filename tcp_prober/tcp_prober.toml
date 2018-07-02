@@ -14,7 +14,7 @@ alertname = "Alertmanager_is_down"
 summary = "Alertmanager is down"
 level = "emergency"
 
-[service.kafka-adapter]
+[service.kafka_adapter]
 addr = "172.16.10.49:28082"
 alertname = "Kafka-adapter_server_is_down"
 summary = "Kafka-adapter is down"

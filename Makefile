@@ -5,9 +5,9 @@ GO=GO15VENDOREXPERIMENT="1" go
 GOTEST=GO15VENDOREXPERIMENT="1" CGO_ENABLED=1 go test
 PACKAGES := $$(go list ./... | grep -vE 'vendor')
 
-.PHONY: build tidb_exporter grafana_collector kafka-adapter syslog-adapter tcp_prober clean
+.PHONY: build tidb_exporter grafana_collector kafka_adapter syslog_adapter tcp_prober clean
 
-build: check test tidb_exporter grafana_collector kafka-adapter syslog-adapter tcp_prober
+build: check test tidb_exporter grafana_collector kafka_adapter syslog_adapter tcp_prober
 
 tidb_exporter:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/tidb_exporter tidb_exporter/*.go
@@ -15,11 +15,11 @@ tidb_exporter:
 grafana_collector:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/grafana_collector cmd/grafana_collector/*.go
 
-kafka-adapter:
-	$(GO) build -ldflags '$(LDFLAGS)' -o bin/kafka-adapter kafka-adapter/*.go
+kafka_adapter:
+	$(GO) build -ldflags '$(LDFLAGS)' -o bin/kafka_adapter kafka_adapter/*.go
 
-syslog-adapter:
-	$(GO) build -ldflags '$(LDFLAGS)' -o bin/syslog-adapter syslog-adapter/*.go
+syslog_adapter:
+	$(GO) build -ldflags '$(LDFLAGS)' -o bin/syslog_adapter syslog_adapter/*.go
 
 tcp_prober:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/tcp_prober tcp_prober/*.go

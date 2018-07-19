@@ -1,3 +1,4 @@
+LDFLAGS += -X "github.com/pingcap/tidb-inspect-tools/pkg/utils.Version=1.0.0"
 LDFLAGS += -X "github.com/pingcap/tidb-inspect-tools/pkg/utils.BuildTS=$(shell date -u '+%Y-%m-%d %I:%M:%S')"
 LDFLAGS += -X "github.com/pingcap/tidb-inspect-tools/pkg/utils.GitHash=$(shell git rev-parse HEAD)"
 
@@ -5,12 +6,15 @@ GO=GO15VENDOREXPERIMENT="1" go
 GOTEST=GO15VENDOREXPERIMENT="1" CGO_ENABLED=1 go test
 PACKAGES := $$(go list ./... | grep -vE 'vendor')
 
-.PHONY: build tidb_exporter grafana_collector kafka_adapter syslog_adapter tcp_prober clean
+.PHONY: build tidb_exporter tikv_metrics_proxy grafana_collector kafka_adapter syslog_adapter tcp_prober clean
 
-build: check test tidb_exporter grafana_collector kafka_adapter syslog_adapter tcp_prober
+build: check test tidb_exporter tikv_metrics_proxy grafana_collector kafka_adapter syslog_adapter tcp_prober
 
 tidb_exporter:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/tidb_exporter tidb_exporter/*.go
+
+tikv_metrics_proxy:
+	$(GO) build -ldflags '$(LDFLAGS)' -o bin/tikv_metrics_proxy tikv_metrics_proxy/*.go
 
 grafana_collector:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/grafana_collector cmd/grafana_collector/*.go

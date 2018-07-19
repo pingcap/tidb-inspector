@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: sudo cpu.sh pid
+# Usage: sudo cpu_tikv.sh pid
 
 if [ "$#" -ne 1 ]; then
   PID=`pgrep tikv-server | head -n 1`

@@ -1,17 +1,29 @@
+// Copyright 2018 PingCAP, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"database/sql"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
+	"github.com/pingcap/tidb-inspect-tools/pkg/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -34,28 +46,9 @@ type tidbOpts struct {
 	password string
 }
 
-// ParseHostPortAddr returns a host:port list
-func ParseHostPortAddr(s string) ([]string, error) {
-	strs := strings.Split(s, ",")
-	addrs := make([]string, 0, len(strs))
-
-	for _, str := range strs {
-		str = strings.TrimSpace(str)
-
-		_, _, err := net.SplitHostPort(str)
-		if err != nil {
-			return nil, errors.Annotatef(err, `tidb.addrs does not have the form "host:port": %s`, str)
-		}
-
-		addrs = append(addrs, str)
-	}
-
-	return addrs, nil
-}
-
 // NewExporter returns an initialized Exporter.
 func NewExporter(opts tidbOpts) (*Exporter, error) {
-	addrs, err := ParseHostPortAddr(opts.addrs)
+	addrs, err := utils.ParseHostPortAddr(opts.addrs)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -119,7 +112,7 @@ func checkParameters(opts tidbOpts) {
 
 func main() {
 	var (
-		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry").Default(":9200").String()
+		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry").Default(":9500").String()
 		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 		logFile       = kingpin.Flag("log-file", "Log file path.").Default("").String()
 		logLevel      = kingpin.Flag("log-level", "Log level: debug, info, warn, error, fatal.").Default("info").String()
@@ -131,7 +124,7 @@ func main() {
 	kingpin.Flag("tidb.addrs", "Addresses (host:port) of TiDB server nodes, comma separated.").Default("").StringVar(&opts.addrs)
 	kingpin.Flag("tidb.username", "TiDB user name.").Default("").StringVar(&opts.username)
 	kingpin.Flag("tidb.password", "TiDB user password.").Default("").StringVar(&opts.password)
-
+	kingpin.Version(utils.GetRawInfo("tikv_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 

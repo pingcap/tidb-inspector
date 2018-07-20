@@ -11,20 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package utils
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"testing"
+
+	. "github.com/pingcap/check"
 )
 
-const (
-	namespace = "tidb_exporter"
-)
+func TestClient(t *testing.T) {
+	TestingT(t)
+}
 
-var (
-	queryErrorDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "tidb", "query_error"),
-		"Whether an error occurs while sending query to tidb server.",
-		[]string{"target", "label"}, nil,
-	)
-)
+var _ = Suite(&testAddrs{})
+
+type testAddrs struct{}
+
+func (*testAddrs) TestParseHostPortAddr(c *C) {
+	_, err := ParseHostPortAddr(" 172.16.10.71:4000, 172.16.10.72:4000 ")
+	c.Assert(err, IsNil)
+
+	_, err = ParseHostPortAddr("172.16.10.71,172.16.10.72:4000")
+	c.Assert(err, NotNil)
+}

@@ -11,20 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package utils
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"net"
+	"strings"
+
+	"github.com/juju/errors"
 )
 
-const (
-	namespace = "tidb_exporter"
-)
+// ParseHostPortAddr returns a host:port list
+func ParseHostPortAddr(s string) ([]string, error) {
+	strs := strings.Split(s, ",")
+	addrs := make([]string, 0, len(strs))
 
-var (
-	queryErrorDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "tidb", "query_error"),
-		"Whether an error occurs while sending query to tidb server.",
-		[]string{"target", "label"}, nil,
-	)
-)
+	for _, str := range strs {
+		str = strings.TrimSpace(str)
+
+		_, _, err := net.SplitHostPort(str)
+		if err != nil {
+			return nil, errors.Errorf(`address does not have the form "host:port": %s`, str)
+		}
+
+		addrs = append(addrs, str)
+	}
+
+	return addrs, nil
+}

@@ -1,7 +1,7 @@
 TiKV metrics proxy
 ------
 
-TiKV metrics proxy is a proxy for the TiKV server's prometheus metrics. The `tikv_metrics_proxy` exposes metrics via HTTP on the `/metrics` endpoint. 
+TiKV metrics proxy is a tool for exposing Prometheus metrics of TiKV server. The `tikv_metrics_proxy` exposes metrics via HTTP on the `/metrics` endpoint. 
 
 #### Build
 

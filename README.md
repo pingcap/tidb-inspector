@@ -27,7 +27,7 @@ tidb-inspect-tools are some useful inspection tool collections for TiDB.
 
 - [tikv_metrics_proxy](https://github.com/pingcap/tidb-inspect-tools/tree/master/tikv_metrics_proxy)
 
-  A proxy for the TiKV server's prometheus metrics.
+  A tool for exposing Prometheus metrics of TiKV server.
 
 ## License
 Apache 2.0 license. See the [LICENSE](https://github.com/pingcap/tidb-inspect-tools/blob/master/LICENSE) file for details.

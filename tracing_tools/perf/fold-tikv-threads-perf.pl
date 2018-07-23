@@ -25,7 +25,7 @@ while (defined($_ = <>)) {
     $command =~ s/^sst-importer\d*$/sst-importer/;
 
     # storage read pool. e.g. store-read-high, store-read-norm, store-read-low0
-    # ony low\d needs to be unified, because other priorities already have same thread names because of truncate.
+    # ony low\d needs to be unified, because other priorities already have same thread names because of truncation.
     $command =~ s/^store-read-low\d*$/store-read-low/;
 
     # rocksdb. e.g. rocksdb:bg0

@@ -33,13 +33,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
-	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-var (
-	stores = []string{}
-)
+// Exporter exposes Prometheus metrics of TiKV server
+type Exporter struct {
+	client *rpcClient
+	stores []string
+}
 
 type tikvOpts struct {
 	addrs string
@@ -49,6 +50,24 @@ func checkFlags(opts tikvOpts) {
 	if opts.addrs == "" {
 		log.Fatal("missing startup flag: --tikv.addrs")
 	}
+}
+
+// NewExporter returns an initialized Exporter.
+func NewExporter(opts tikvOpts) (*Exporter, error) {
+	stores, err := utils.ParseHostPortAddr(opts.addrs)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	client := newRPCClient()
+	for _, store := range stores {
+		_, err := client.getConn(store)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
+	}
+
+	return &Exporter{client: client, stores: stores}, nil
 }
 
 func sanitizeLabels(
@@ -69,7 +88,7 @@ func sanitizeLabels(
 	}
 }
 
-func getMetricFamilies() []*dto.MetricFamily {
+func (e *Exporter) getMetricFamilies() []*dto.MetricFamily {
 	wg := sync.WaitGroup{}
 	mutex := &sync.Mutex{}
 	ctx := context.Background()
@@ -78,12 +97,10 @@ func getMetricFamilies() []*dto.MetricFamily {
 	getStoreMetrics := func(store string) {
 		defer wg.Done()
 
-		tikvConn, err := grpc.Dial(store, grpc.WithInsecure())
+		tikvConn, err := e.client.getConn(store)
 		if err != nil {
-			log.Errorf("store '%s', grpc dial error, %v", store, err)
 			return
 		}
-		defer tikvConn.Close()
 
 		tikvClient := debugpb.NewDebugClient(tikvConn)
 		metrics, err := tikvClient.GetMetrics(ctx, &debugpb.GetMetricsRequest{})
@@ -116,7 +133,7 @@ func getMetricFamilies() []*dto.MetricFamily {
 		mutex.Unlock()
 	}
 
-	for _, store := range stores {
+	for _, store := range e.stores {
 		wg.Add(1)
 		go getStoreMetrics(store)
 	}
@@ -156,14 +173,13 @@ func main() {
 
 	log.Info("starting tikv_metrics_proxy")
 
-	var err error
-	stores, err = utils.ParseHostPortAddr(opts.addrs)
+	exporter, err := NewExporter(opts)
 	if err != nil {
 		log.Fatalf("initialize tikv_metrics_proxy error, %v", errors.ErrorStack(err))
 	}
 
 	prometheus.DefaultGatherer = prometheus.Gatherers{
-		prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return getMetricFamilies(), nil }),
+		prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return exporter.getMetricFamilies(), nil }),
 	}
 
 	http.Handle(*metricsPath, promhttp.Handler())
@@ -188,6 +204,8 @@ func main() {
 	go func() {
 		sig := <-sc
 		log.Infof("got signal [%d] to exit", sig)
+
+		exporter.client.closeConns()
 		os.Exit(0)
 	}()
 

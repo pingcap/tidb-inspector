@@ -23,6 +23,7 @@ import (
 	"sort"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/juju/errors"
@@ -34,6 +35,10 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"gopkg.in/alecthomas/kingpin.v2"
+)
+
+const (
+	getMetricsTimeout = time.Duration(15) * time.Second
 )
 
 // Exporter exposes Prometheus metrics of TiKV server
@@ -91,7 +96,6 @@ func sanitizeLabels(
 func (e *Exporter) getMetricFamilies() []*dto.MetricFamily {
 	wg := sync.WaitGroup{}
 	mutex := &sync.Mutex{}
-	ctx := context.Background()
 	allMetrics := make([]*dto.MetricFamily, 0, 1024)
 
 	getStoreMetrics := func(store string) {
@@ -103,6 +107,8 @@ func (e *Exporter) getMetricFamilies() []*dto.MetricFamily {
 		}
 
 		tikvClient := debugpb.NewDebugClient(tikvConn)
+		ctx, cancel := context.WithTimeout(context.Background(), getMetricsTimeout)
+		defer cancel()
 		metrics, err := tikvClient.GetMetrics(ctx, &debugpb.GetMetricsRequest{})
 		if err != nil {
 			log.Errorf("tikv store '%s', get metrics error, %v", store, err)

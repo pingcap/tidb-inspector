@@ -19,10 +19,19 @@ import (
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func newConn(addr string) (*grpc.ClientConn, error) {
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+func newConn(addr string, security Security) (*grpc.ClientConn, error) {
+	opt := grpc.WithInsecure()
+	if len(security.ClusterSSLCA) != 0 {
+		tlsConfig, err := security.ToTLSConfig()
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
+		opt = grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
+	}
+	conn, err := grpc.Dial(addr, opt)
 	if err != nil {
 		log.Errorf("tikv store '%s', grpc dial error, %v", addr, err)
 		return nil, errors.Trace(err)
@@ -34,11 +43,13 @@ type rpcClient struct {
 	sync.RWMutex
 	isClosed bool
 	conns    map[string]*grpc.ClientConn
+	security Security
 }
 
-func newRPCClient() *rpcClient {
+func newRPCClient(security Security) *rpcClient {
 	return &rpcClient{
-		conns: make(map[string]*grpc.ClientConn),
+		conns:    make(map[string]*grpc.ClientConn),
+		security: security,
 	}
 }
 
@@ -63,7 +74,7 @@ func (c *rpcClient) getConn(addr string) (*grpc.ClientConn, error) {
 func (c *rpcClient) createConn(addr string) (*grpc.ClientConn, error) {
 	c.Lock()
 	defer c.Unlock()
-	conn, err := newConn(addr)
+	conn, err := newConn(addr, c.security)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +86,6 @@ func (c *rpcClient) closeConns() {
 	c.Lock()
 	if !c.isClosed {
 		c.isClosed = true
-		// close all connections
 		for i, conn := range c.conns {
 			conn.Close()
 			c.conns[i] = nil

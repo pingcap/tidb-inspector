@@ -48,7 +48,8 @@ type Exporter struct {
 }
 
 type tikvOpts struct {
-	addrs string
+	addrs    string
+	security Security
 }
 
 func checkFlags(opts tikvOpts) {
@@ -64,7 +65,7 @@ func NewExporter(opts tikvOpts) (*Exporter, error) {
 		return nil, errors.Trace(err)
 	}
 
-	client := newRPCClient()
+	client := newRPCClient(opts.security)
 	for _, store := range stores {
 		_, err := client.getConn(store)
 		if err != nil {
@@ -161,6 +162,9 @@ func main() {
 	)
 
 	kingpin.Flag("tikv.addrs", "Addresses (host:port) of TiKV instances, comma separated.").Default("").StringVar(&opts.addrs)
+	kingpin.Flag("tls.ca-file", "Path of file that contains list of trusted SSL CAs for connection with tikv servers.").Default("").StringVar(&opts.security.ClusterSSLCA)
+	kingpin.Flag("tls.cert-file", "Path of file that contains X509 certificate in PEM format for connection with tikv servers.").Default("").StringVar(&opts.security.ClusterSSLCert)
+	kingpin.Flag("tls.key-file", "Path of file that contains X509 key in PEM format for connection with with tikv servers.").Default("").StringVar(&opts.security.ClusterSSLKey)
 	kingpin.Version(utils.GetRawInfo("tikv_metrics_proxy"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()

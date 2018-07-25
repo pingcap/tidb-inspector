@@ -24,7 +24,7 @@ import (
 func newConn(addr string) (*grpc.ClientConn, error) {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
-		log.Errorf("store '%s', grpc dial error, %v", addr, err)
+		log.Errorf("tikv store '%s', grpc dial error, %v", addr, err)
 		return nil, errors.Trace(err)
 	}
 	return conn, nil
@@ -63,15 +63,11 @@ func (c *rpcClient) getConn(addr string) (*grpc.ClientConn, error) {
 func (c *rpcClient) createConn(addr string) (*grpc.ClientConn, error) {
 	c.Lock()
 	defer c.Unlock()
-	conn, ok := c.conns[addr]
-	if !ok {
-		var err error
-		conn, err = newConn(addr)
-		if err != nil {
-			return nil, err
-		}
-		c.conns[addr] = conn
+	conn, err := newConn(addr)
+	if err != nil {
+		return nil, err
 	}
+	c.conns[addr] = conn
 	return conn, nil
 }
 
@@ -80,8 +76,9 @@ func (c *rpcClient) closeConns() {
 	if !c.isClosed {
 		c.isClosed = true
 		// close all connections
-		for _, conn := range c.conns {
+		for i, conn := range c.conns {
 			conn.Close()
+			c.conns[i] = nil
 		}
 	}
 	c.Unlock()

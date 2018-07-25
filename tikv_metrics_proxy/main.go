@@ -105,7 +105,7 @@ func (e *Exporter) getMetricFamilies() []*dto.MetricFamily {
 		tikvClient := debugpb.NewDebugClient(tikvConn)
 		metrics, err := tikvClient.GetMetrics(ctx, &debugpb.GetMetricsRequest{})
 		if err != nil {
-			log.Errorf("store '%s', get metrics error, %v", store, err)
+			log.Errorf("tikv store '%s', get metrics error, %v", store, err)
 			return
 		}
 
@@ -120,7 +120,7 @@ func (e *Exporter) getMetricFamilies() []*dto.MetricFamily {
 		var parser expfmt.TextParser
 		metricFamilies, err := parser.TextToMetricFamilies(bytes.NewBufferString(mData))
 		if err != nil {
-			log.Errorf("store '%s', TextToMetricFamilies error, %v", store, err)
+			log.Errorf("tikv store '%s', TextToMetricFamilies error, %v", store, err)
 			return
 		}
 

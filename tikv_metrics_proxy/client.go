@@ -73,6 +73,10 @@ func (c *rpcClient) getConn(addr string) (*grpc.ClientConn, error) {
 
 func (c *rpcClient) createConn(addr string) (*grpc.ClientConn, error) {
 	c.Lock()
+	if c.isClosed {
+		c.Unlock()
+		return nil, errors.Errorf("rpcClient is closed")
+	}
 	defer c.Unlock()
 	conn, err := newConn(addr, c.security)
 	if err != nil {
@@ -86,10 +90,10 @@ func (c *rpcClient) closeConns() {
 	c.Lock()
 	if !c.isClosed {
 		c.isClosed = true
-		for i, conn := range c.conns {
+		for _, conn := range c.conns {
 			conn.Close()
-			c.conns[i] = nil
 		}
+		c.conns = nil
 	}
 	c.Unlock()
 }

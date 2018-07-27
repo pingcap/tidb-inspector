@@ -220,5 +220,9 @@ func main() {
 	}()
 
 	log.Info("listening on", *listenAddress)
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	err = http.ListenAndServe(*listenAddress, nil)
+	if err != nil {
+		exporter.client.closeConns()
+		log.Fatal(err)
+	}
 }

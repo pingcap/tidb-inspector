@@ -15,7 +15,6 @@ package main
 
 import (
 	"sync"
-	"time"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
@@ -32,7 +31,7 @@ func newConn(addr string, security Security) (*grpc.ClientConn, error) {
 		}
 		opt = grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
 	}
-	conn, err := grpc.Dial(addr, opt, grpc.WithBackoffMaxDelay(time.Second*5))
+	conn, err := grpc.Dial(addr, opt)
 	if err != nil {
 		log.Errorf("tikv store '%s', grpc dial error, %v", addr, err)
 		return nil, errors.Trace(err)

@@ -33,6 +33,7 @@ while (defined($_ = <>)) {
 
     # snapshot sender. e.g. snap sender0
     $command =~ s/^snap sender\d*$/snap-sender/;
+    # thread is renamed to snap-sender0 in newer versions
     $command =~ s/^snap-sender\d*$/snap-sender/;
 
     print $command, " ", $pid, $remain, "\n";

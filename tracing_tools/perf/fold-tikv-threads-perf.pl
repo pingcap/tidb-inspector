@@ -32,7 +32,8 @@ while (defined($_ = <>)) {
     $command =~ s/^rocksdb:bg\d*$/rocksdb:bg/;
 
     # snapshot sender. e.g. snap sender0
-    $command =~ s/^snap sender\d*$/snap sender/;
+    $command =~ s/^snap sender\d*$/snap-sender/;
+    $command =~ s/^snap-sender\d*$/snap-sender/;
 
     print $command, " ", $pid, $remain, "\n";
   } else {

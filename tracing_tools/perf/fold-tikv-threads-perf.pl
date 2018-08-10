@@ -4,12 +4,49 @@
 #
 # Usage: ./fold-tikv-threads-perf.pl infile > outfile
 
-while (defined($_ = <>)) {
-  chomp;
-  if (/^(\S.+?)\s+(\d+)(.*)$/) {
+use strict;
+use Getopt::Long;
+
+my $threads = ""; # regex of thread names.
+my $help = 0;
+
+sub usage {
+  die <<USAGE_END;
+USAGE: $0 [options] infile > outfile.svg\n
+  --threads TEXT   # captrue thread names.
+  --help           # this message
+
+  eg,
+  $0 --threads="grpc.*" infile > outfile
+USAGE_END
+}
+
+GetOptions(
+  'threads=s'  => \$threads,
+  'help'        => \$help,
+) ? ($help && usage()) : usage();
+
+my $threads_regex = qr/$threads/;
+my $skip_thread = 0;
+
+while (my $line = <>) {
+  chomp $line;
+  if ($line =~ /^(\S.+?)\s+(\d+)(.*)$/) {
     my $command = $1;
     my $pid = $2;
     my $remain = $3;
+
+    if ($threads) {
+      # We want to filter some threads.
+      if ($command =~ /$threads_regex/) {
+        $skip_thread = 0;
+      } else {
+        $skip_thread = 1;
+        # Skips this line too.
+        next;
+      }
+    }
+
     # grpc server. e.g. grpc-server-0
     $command =~ s/^grpc-server-\d*$/grpc-server/;
 
@@ -36,9 +73,11 @@ while (defined($_ = <>)) {
     # thread is renamed to snap-sender0 in newer versions
     $command =~ s/^snap-sender\d*$/snap-sender/;
 
-    print $command, " ", $pid, $remain, "\n";
-  } else {
-    # other
-    print $_, "\n";
+    $line = $command . " " . $pid . $remain;
+  } elsif ($skip_thread) {
+    # The thread is skipped.
+    next;
   }
+
+  print $line, "\n";
 }

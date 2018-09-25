@@ -13,7 +13,7 @@ my $help = 0;
 sub usage {
   die <<USAGE_END;
 USAGE: $0 [options] infile > outfile.svg\n
-  --threads TEXT   # captrue thread names.
+  --threads REGEX  # captrue thread names.
   --help           # this message
 
   eg,

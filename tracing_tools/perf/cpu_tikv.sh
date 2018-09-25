@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: sudo cpu_tikv.sh pid threads
+# Usage: sudo cpu_tikv.sh pid threads_regex
 
 if [ -z "$*" ]; then
   PID=`pgrep tikv-server | head -n 1`

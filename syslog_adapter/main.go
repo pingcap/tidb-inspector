@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/juju/errors"
-	"github.com/ngaut/log"
-	"github.com/unrolled/render"
 	"log/syslog"
 	"net/http"
 	"os"
@@ -13,6 +10,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/ngaut/log"
+	"github.com/pkg/errors"
+	"github.com/unrolled/render"
 )
 
 var (

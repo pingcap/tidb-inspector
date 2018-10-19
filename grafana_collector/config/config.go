@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/juju/errors"
+	"github.com/pkg/errors"
 )
 
 // Config contains configuration options.

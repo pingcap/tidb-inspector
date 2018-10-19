@@ -17,7 +17,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/juju/errors"
+	"github.com/pkg/errors"
 )
 
 // ParseHostPortAddr returns a host:port list

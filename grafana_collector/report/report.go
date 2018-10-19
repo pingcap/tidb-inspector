@@ -36,11 +36,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pborman/uuid"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/grafana"
+	"github.com/pkg/errors"
 	"github.com/signintech/gopdf"
 )
 

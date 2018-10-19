@@ -34,8 +34,9 @@
   version = "1.6.1"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/juju/errors"
+  version = "0.9.0"
+  name = "github.com/pkg/errors"
+  source = "https://github.com/pingcap/errors.git"
 
 [[constraint]]
   branch = "master"

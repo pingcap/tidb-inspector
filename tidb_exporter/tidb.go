@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/juju/errors"
 	"github.com/ngaut/log"
+	"github.com/pkg/errors"
 )
 
 var (

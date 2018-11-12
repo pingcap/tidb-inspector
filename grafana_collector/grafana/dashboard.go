@@ -38,9 +38,10 @@ import (
 
 // Panel represents a Grafana dashboard panel
 type Panel struct {
-	ID    int
-	Type  string // Panel Type: Graph/Singlestat
-	Title string
+	ID       int
+	Type     string // Panel Type: Graph/Singlestat
+	Title    string
+	RowTitle string
 }
 
 // Row represents a container for Panels
@@ -92,7 +93,9 @@ func (dc dashContainer) NewDashboard(variables url.Values) Dashboard {
 
 func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
 	for _, row := range dc.Dashboard.Rows {
+		rowTitle := row.Title
 		for i, p := range row.Panels {
+			p.RowTitle = rowTitle
 			row.Panels[i] = p
 			dash.Panels = append(dash.Panels, p)
 		}

@@ -33,7 +33,7 @@ test:
 	$(GOTEST) -cover $(PACKAGES)
 
 check:
-	$(GO) get github.com/golang/lint/golint
+	$(GO) get golang.org/x/lint/golint
 
 	$(GO) tool vet . 2>&1 | grep -vE 'vendor' | awk '{print} END{if(NR>0) {exit 1}}'
 	$(GO) tool vet --shadow . 2>&1 | grep -vE 'vendor' | awk '{print} END{if(NR>0) {exit 1}}'

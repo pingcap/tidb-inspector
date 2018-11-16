@@ -33,15 +33,24 @@ import (
 	"encoding/json"
 	"github.com/ngaut/log"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
 // Panel represents a Grafana dashboard panel
 type Panel struct {
-	ID       int
-	Type     string // Panel Type: Graph/Singlestat
-	Title    string
-	RowTitle string
+	ID         int
+	Type       string // Panel Type: Graph/Singlestat
+	Title      string
+	RowTitle   string
+	ScopedVars map[string]ScopedVar
+}
+
+// ScopedVar represents template vars
+type ScopedVar struct {
+	Selected bool
+	Text     string
+	Value    string
 }
 
 // Row represents a container for Panels
@@ -92,9 +101,20 @@ func (dc dashContainer) NewDashboard(variables url.Values) Dashboard {
 }
 
 func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
+	re := regexp.MustCompile(`\$\w+`)
+
 	for _, row := range dc.Dashboard.Rows {
 		rowTitle := row.Title
+		matched := re.FindString(rowTitle)
+
 		for i, p := range row.Panels {
+			if matched != "" {
+				for k, v := range p.ScopedVars {
+					if strings.TrimPrefix(matched, "$") == k {
+						rowTitle = re.ReplaceAllString(rowTitle, v.Value)
+					}
+				}
+			}
 			p.RowTitle = rowTitle
 			row.Panels[i] = p
 			dash.Panels = append(dash.Panels, p)

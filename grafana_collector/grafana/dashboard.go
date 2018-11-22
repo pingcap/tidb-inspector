@@ -31,19 +31,25 @@ package grafana
 
 import (
 	"encoding/json"
-	"github.com/ngaut/log"
 	"net/url"
-	"regexp"
+	// "regexp"
 	"strings"
+	// "time"
+
+	"github.com/ngaut/log"
+)
+
+var (
+	templating = map[string][]string{"db": []string{"kv", "raft"}, "command": []string{"batch_get", "commit", "gc", "get", "prewrite", "scan", "scan_lock"}}
 )
 
 // Panel represents a Grafana dashboard panel
 type Panel struct {
-	ID         int
-	Type       string // Panel Type: Graph/Singlestat
-	Title      string
-	RowTitle   string
-	ScopedVars map[string]ScopedVar
+	ID       int
+	Type     string // Panel Type: Graph/Singlestat
+	Title    string
+	RowTitle string
+	// ScopedVars map[string]ScopedVar
 }
 
 // ScopedVar represents template vars
@@ -55,10 +61,13 @@ type ScopedVar struct {
 
 // Row represents a container for Panels
 type Row struct {
-	ID        int
-	Showtitle bool // Row is visible or hidden
-	Title     string
-	Panels    []Panel
+	ID              int
+	Showtitle       bool // Row is visible or hidden
+	Title           string
+	Repeat          string
+	RepeatIteration int
+	RepeatRowID     int
+	Panels          []Panel
 }
 
 // Dashboard represents a Grafana dashboard
@@ -75,6 +84,68 @@ type dashContainer struct {
 	Meta      struct {
 		Slug string
 	}
+}
+
+func (d *Dashboard) process() {
+	if len(templating) == 0 {
+		return
+	}
+
+	// iteration := int(time.Now().UnixNano() / int64(time.Millisecond))
+
+	for i := 0; i < len(d.Rows); i++ {
+		row := d.Rows[i]
+		if row.Repeat != "" {
+			d.repeatRow(row, i)
+		}
+	}
+}
+
+func (d *Dashboard) repeatRow(row Row, rowIndex int) {
+	selected, ok := templating[row.Repeat]
+	if !ok {
+		return
+	}
+
+	for index, option := range selected {
+		d.getRowClone(row, index, rowIndex)
+	}
+}
+
+func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int) {
+	if repeatIndex == 0 {
+		return
+	}
+
+	sourceRowID := sourceRowIndex + 1
+
+	repeat := Row{}
+	repeat.Panels = make([]Panel, len(sourceRow.Panels))
+	copy(repeat.Panels, sourceRow.Panels)
+
+	repeat.RepeatRowID = sourceRowID
+	// repeat.RepeatIteration = iteration
+
+	d.Rows = append(d.Rows, Row{Title: "temp"})
+	copy(d.Rows[sourceRowIndex+repeatIndex+1:], d.Rows[sourceRowIndex+repeatIndex:])
+	d.Rows[sourceRowIndex+repeatIndex] = repeat
+
+	for i := range d.Rows[sourceRowIndex+repeatIndex].Panels {
+		d.Rows[sourceRowIndex+repeatIndex].Panels[i].ID = d.getNextPanelID()
+	}
+}
+
+func (d *Dashboard) getNextPanelID() int {
+	max := 0
+	for _, row := range d.Rows {
+		for _, panel := range row.Panels {
+			if panel.ID > max {
+				max = panel.ID
+			}
+		}
+	}
+
+	return max + 1
 }
 
 // NewDashboard creates Dashboard from Grafana's internal JSON dashboard definition
@@ -101,27 +172,35 @@ func (dc dashContainer) NewDashboard(variables url.Values) Dashboard {
 }
 
 func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
-	re := regexp.MustCompile(`\$\w+`)
+	// re := regexp.MustCompile(`\$\w+`)
 
 	for _, row := range dc.Dashboard.Rows {
-		rowTitle := row.Title
-		matched := re.FindString(rowTitle)
+		// rowTitle := row.Title
+		// matched := re.FindString(rowTitle)
 
-		for i, p := range row.Panels {
-			if matched != "" {
-				for k, v := range p.ScopedVars {
-					if strings.TrimPrefix(matched, "$") == k {
-						rowTitle = re.ReplaceAllString(rowTitle, v.Value)
-					}
-				}
-			}
-			p.RowTitle = rowTitle
-			row.Panels[i] = p
-			dash.Panels = append(dash.Panels, p)
-		}
+		// for i, p := range row.Panels {
+		// if matched != "" {
+		//     for k, v := range p.ScopedVars {
+		//         if strings.TrimPrefix(matched, "$") == k {
+		//             rowTitle = re.ReplaceAllString(rowTitle, v.Value)
+		//         }
+		//     }
+		// }
+		// p.RowTitle = rowTitle
+		// row.Panels[i] = p
+		// dash.Panels = append(dash.Panels, p)
+		// }
 		dash.Rows = append(dash.Rows, row)
 	}
 
+	log.Errorf("888888888888: cap, %v\n", cap(dash.Rows))
+	log.Errorf("888888888888: len, %v\n", len(dash.Rows))
+
+	for _, row := range dash.Rows {
+		log.Errorf("999999999999999, %v\n", row.Title)
+	}
+
+	dash.process()
 	return dash
 }
 

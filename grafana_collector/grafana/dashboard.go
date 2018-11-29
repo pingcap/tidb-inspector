@@ -14,6 +14,12 @@ import (
 	"github.com/ngaut/log"
 )
 
+// ScopedVar represents template variable
+type ScopedVar struct {
+	Text  string
+	Value string
+}
+
 // Panel represents a Grafana dashboard panel
 type Panel struct {
 	ID         int
@@ -21,12 +27,6 @@ type Panel struct {
 	Title      string
 	RowTitle   string
 	ScopedVars map[string]ScopedVar
-}
-
-// ScopedVar represents template vars
-type ScopedVar struct {
-	Text  string
-	Value string
 }
 
 // Row represents a container for Panels
@@ -148,9 +148,9 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 		selected []string
 	)
 
-	repeatValue := row.Repeat
+	label := row.Repeat
 	for _, tv := range d.Templating["list"] {
-		if tv.Name == repeatValue {
+		if tv.Name == label {
 			exist = true
 			selected = d.getTemplatingVariable(tv)
 		}
@@ -161,18 +161,28 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 	}
 
 	for index, option := range selected {
-		duplicate := d.getRowClone(row, index, rowIndex)
-
-		for i := 0; i < len(duplicate.Panels); i++ {
-			panel := duplicate.Panels[i]
-			panel.ScopedVars = map[string]ScopedVar{repeatValue: {Text: option, Value: option}}
-		}
+		d.getRowClone(row, index, rowIndex, label, option)
 	}
 }
 
-func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int) Row {
+func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int, label string, option string) {
+
+	re := regexp.MustCompile(`\$\w+`)
+	rowTitle := sourceRow.Title
+	matched := re.FindString(rowTitle)
+	if matched != "" {
+		if strings.TrimPrefix(matched, "$") == label {
+			rowTitle = re.ReplaceAllString(rowTitle, option)
+		}
+	}
+
 	if repeatIndex == 0 {
-		return sourceRow
+		d.Rows[sourceRowIndex].Title = rowTitle
+		for i := range d.Rows[sourceRowIndex].Panels {
+			d.Rows[sourceRowIndex].Panels[i].RowTitle = rowTitle
+			d.Rows[sourceRowIndex].Panels[i].ScopedVars = map[string]ScopedVar{label: {Text: option, Value: option}}
+		}
+		return
 	}
 
 	sourceRowID := sourceRowIndex + 1
@@ -187,12 +197,14 @@ func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex i
 	d.Rows = append(d.Rows, Row{})
 	copy(d.Rows[sourceRowIndex+repeatIndex+1:], d.Rows[sourceRowIndex+repeatIndex:])
 	d.Rows[sourceRowIndex+repeatIndex] = repeat
+	d.Rows[sourceRowIndex+repeatIndex].Title = rowTitle
 
 	for i := range d.Rows[sourceRowIndex+repeatIndex].Panels {
 		d.Rows[sourceRowIndex+repeatIndex].Panels[i].ID = d.getNextPanelID()
+		d.Rows[sourceRowIndex+repeatIndex].Panels[i].RowTitle = rowTitle
+		d.Rows[sourceRowIndex+repeatIndex].Panels[i].ScopedVars = map[string]ScopedVar{label: {Text: option, Value: option}}
 	}
 
-	return repeat
 }
 
 func (d *Dashboard) getNextPanelID() int {
@@ -204,7 +216,6 @@ func (d *Dashboard) getNextPanelID() int {
 			}
 		}
 	}
-
 	return max + 1
 }
 
@@ -216,7 +227,12 @@ func NewDashboard(dashJSON []byte, url string, apiToken string, variables url.Va
 		panic(err)
 	}
 	d := dash.NewDashboard(url, apiToken, variables)
-	log.Infof("Populated dashboard datastructure: %+v\n", d)
+
+	b, err := json.MarshalIndent(d, "", "    ")
+	if err != nil {
+		log.Errorf("Error marchaling populated dashboard: %v", err)
+	}
+	log.Infof("Populated dashboard datastructure: %s\n", string(b))
 	return d
 }
 

@@ -47,8 +47,9 @@ type ServeReportHandler struct {
 	newReport        func(g grafana.Client, dashName string, time grafana.TimeRange) report.Report
 }
 
-// RegisterHandlers registers all http.Handler with their associated routes to the router
-// Two different serve report handlers are used to provide support for both Grafana v4 (and older) and v5 APIs
+// RegisterHandlers registers all http.Handler with their associated routes to
+// the router. Two different serve report handlers are used to provide support
+// for both Grafana v4 (and older) and v5 APIs
 func RegisterHandlers(router *mux.Router, reportServerV4, reportServerV5 ServeReportHandler) {
 	router.Handle("/api/report/{dashId}", reportServerV4)
 	router.Handle("/api/v5/report/{dashId}", reportServerV5)
@@ -56,21 +57,21 @@ func RegisterHandlers(router *mux.Router, reportServerV4, reportServerV5 ServeRe
 
 func (h ServeReportHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.Info("Reporter called")
-	g := h.newGrafanaClient(*proto+*ip, apiToken(req), dashVariables(req))
-	rep := h.newReport(g, dashID(req), time(req))
+	grafanaClient := h.newGrafanaClient(*proto+*ip, apiToken(req), dashVariables(req))
+	reporter := h.newReport(grafanaClient, dashID(req), time(req))
 
-	file, err := rep.Generate()
+	file, err := reporter.Generate()
 	if err != nil {
 		log.Errorf("Error generating report: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	defer rep.Clean()
+	defer reporter.Clean()
 	defer file.Close()
 
 	_, err = io.Copy(w, file)
 	if err != nil {
-		log.Errorf("Error copying data to response: %v", err)
+		log.Errorf("Error copying pdf data to response: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}

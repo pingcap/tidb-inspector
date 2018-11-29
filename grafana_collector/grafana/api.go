@@ -32,7 +32,6 @@ package grafana
 import (
 	"errors"
 	"fmt"
-	"github.com/ngaut/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -40,6 +39,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ngaut/log"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
 )
 
@@ -63,7 +63,8 @@ type client struct {
 
 // NewV4Client creates a new Grafana 4 Client. If apiToken is the empty string,
 // authorization headers will be omitted from requests.
-// variables are Grafana template variable url values of the form var-{name}={value}, e.g. var-host=dev
+// variables are Grafana template variable url values of the form
+// var-{name}={value}, e.g. var-host=dev
 func NewV4Client(grafanaURL string, apiToken string, variables url.Values) Client {
 	getDashEndpoint := func(dashName string) string {
 		dashURL := grafanaURL + "/api/dashboards/db/" + dashName
@@ -81,7 +82,8 @@ func NewV4Client(grafanaURL string, apiToken string, variables url.Values) Clien
 
 // NewV5Client creates a new Grafana 5 Client. If apiToken is the empty string,
 // authorization headers will be omitted from requests.
-// variables are Grafana template variable url values of the form var-{name}={value}, e.g. var-host=dev
+// variables are Grafana template variable url values of the form
+// var-{name}={value}, e.g. var-host=dev
 func NewV5Client(grafanaURL string, apiToken string, variables url.Values) Client {
 	getDashEndpoint := func(dashName string) string {
 		dashURL := grafanaURL + "/api/dashboards/uid/" + dashName
@@ -126,7 +128,7 @@ func (g client) GetDashboard(dashName string) (Dashboard, error) {
 		return Dashboard{}, fmt.Errorf("error obtaining dashboard from %v. Got Status %v, message: %v ", dashURL, resp.Status, string(body))
 	}
 
-	return NewDashboard(body, g.variables), nil
+	return NewDashboard(body, g.url, g.apiToken, g.variables), nil
 }
 
 func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadCloser, error) {

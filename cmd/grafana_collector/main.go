@@ -92,7 +92,7 @@ func main() {
 		}
 	}
 
-	log.Infof("serving at '%s' and using grafana at '%s%s'", *port, *proto, *ip)
+	log.Infof("grafana_collector is serving at '%s' and using grafana at '%s%s'", *port, *proto, *ip)
 
 	router := mux.NewRouter()
 	RegisterHandlers(

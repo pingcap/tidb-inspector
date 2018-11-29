@@ -1,62 +1,32 @@
-// Copyright 2018 PingCAP, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/*
-   Copyright 2016 Vastech SA (PTY) LTD
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
 package grafana
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
-	// "regexp"
+	"regexp"
+	"sort"
 	"strings"
-	// "time"
+	"time"
 
 	"github.com/ngaut/log"
 )
 
-var (
-	templating = map[string][]string{"db": []string{"kv", "raft"}, "command": []string{"batch_get", "commit", "gc", "get", "prewrite", "scan", "scan_lock"}}
-)
-
 // Panel represents a Grafana dashboard panel
 type Panel struct {
-	ID       int
-	Type     string // Panel Type: Graph/Singlestat
-	Title    string
-	RowTitle string
-	// ScopedVars map[string]ScopedVar
+	ID         int
+	Type       string // Panel Type: Graph/Singlestat
+	Title      string
+	RowTitle   string
+	ScopedVars map[string]ScopedVar
 }
 
 // ScopedVar represents template vars
 type ScopedVar struct {
-	Selected bool
-	Text     string
-	Value    string
+	Text  string
+	Value string
 }
 
 // Row represents a container for Panels
@@ -70,13 +40,24 @@ type Row struct {
 	Panels          []Panel
 }
 
+// TemplatingVariable represents templating variable
+type TemplatingVariable struct {
+	Name       string
+	Datasource string
+	Query      string
+}
+
 // Dashboard represents a Grafana dashboard
 // This is used to unmarshal the dashbaord JSON
 type Dashboard struct {
 	Title          string
-	VariableValues string //Not present in the Grafana JSON structure
+	Templating     map[string][]TemplatingVariable
 	Rows           []Row
 	Panels         []Panel
+	VariableValues string
+	url            string
+	apiToken       string
+	Iteration      int
 }
 
 type dashContainer struct {
@@ -86,12 +67,68 @@ type dashContainer struct {
 	}
 }
 
-func (d *Dashboard) process() {
-	if len(templating) == 0 {
-		return
+// MetircResult represents templating variable metric result
+type MetircResult struct {
+	Status string
+	Data   []map[string]interface{}
+}
+
+func unique(input []string) []string {
+	result := make([]string, 0, len(input))
+	m := make(map[string]bool)
+
+	for _, item := range input {
+		if _, ok := m[item]; !ok {
+			m[item] = true
+			result = append(result, item)
+		}
 	}
 
-	// iteration := int(time.Now().UnixNano() / int64(time.Millisecond))
+	return result
+}
+
+func (d *Dashboard) getTemplatingVariable(tv TemplatingVariable) []string {
+	re := regexp.MustCompile(`label_values\((\w+),\s*(\w+)\)$`)
+	matched := re.FindStringSubmatch(tv.Query)
+	metric := matched[1]
+	label := matched[2]
+
+	metricURL := fmt.Sprintf("%s/api/datasources/proxy/1/api/v1/series?match[]=%s&start=1543386918&end=1543390518", d.url, metric)
+
+	log.Infof("request metric at %s", metricURL)
+
+	clientTimeout := time.Duration(300) * time.Second
+	client := &http.Client{Timeout: clientTimeout}
+	req, _ := http.NewRequest("GET", metricURL, nil)
+
+	if d.apiToken != "" {
+		req.Header.Add("Authorization", "Bearer "+d.apiToken)
+	}
+	resp, _ := client.Do(req)
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var result MetircResult
+	json.Unmarshal(body, &result)
+
+	labelResult := make([]string, 0, len(result.Data))
+	for _, m := range result.Data {
+		s, ok := m[label].(string)
+		if ok {
+			labelResult = append(labelResult, s)
+		}
+	}
+
+	uniqueLabelResult := unique(labelResult)
+	sort.Strings(uniqueLabelResult)
+	return uniqueLabelResult
+}
+
+func (d *Dashboard) process() {
+	if len(d.Templating["list"]) == 0 {
+		return
+	}
 
 	for i := 0; i < len(d.Rows); i++ {
 		row := d.Rows[i]
@@ -101,38 +138,61 @@ func (d *Dashboard) process() {
 	}
 }
 
+func (d *Dashboard) removeRow(rowIndex int) {
+	d.Rows = append(d.Rows[:rowIndex], d.Rows[rowIndex+1:]...)
+}
+
 func (d *Dashboard) repeatRow(row Row, rowIndex int) {
-	selected, ok := templating[row.Repeat]
-	if !ok {
+	var (
+		exist    bool
+		selected []string
+	)
+
+	repeatValue := row.Repeat
+	for _, tv := range d.Templating["list"] {
+		if tv.Name == repeatValue {
+			exist = true
+			selected = d.getTemplatingVariable(tv)
+		}
+	}
+
+	if !exist {
 		return
 	}
 
 	for index, option := range selected {
-		d.getRowClone(row, index, rowIndex)
+		duplicate := d.getRowClone(row, index, rowIndex)
+
+		for i := 0; i < len(duplicate.Panels); i++ {
+			panel := duplicate.Panels[i]
+			panel.ScopedVars = map[string]ScopedVar{repeatValue: {Text: option, Value: option}}
+		}
 	}
 }
 
-func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int) {
+func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int) Row {
 	if repeatIndex == 0 {
-		return
+		return sourceRow
 	}
 
 	sourceRowID := sourceRowIndex + 1
 
 	repeat := Row{}
+	repeat.Repeat = ""
+	repeat.RepeatRowID = sourceRowID
+	repeat.RepeatIteration = d.Iteration
 	repeat.Panels = make([]Panel, len(sourceRow.Panels))
 	copy(repeat.Panels, sourceRow.Panels)
 
-	repeat.RepeatRowID = sourceRowID
-	// repeat.RepeatIteration = iteration
-
-	d.Rows = append(d.Rows, Row{Title: "temp"})
+	d.Rows = append(d.Rows, Row{})
 	copy(d.Rows[sourceRowIndex+repeatIndex+1:], d.Rows[sourceRowIndex+repeatIndex:])
 	d.Rows[sourceRowIndex+repeatIndex] = repeat
 
 	for i := range d.Rows[sourceRowIndex+repeatIndex].Panels {
 		d.Rows[sourceRowIndex+repeatIndex].Panels[i].ID = d.getNextPanelID()
 	}
+
+	return repeat
 }
 
 func (d *Dashboard) getNextPanelID() int {
@@ -149,21 +209,27 @@ func (d *Dashboard) getNextPanelID() int {
 }
 
 // NewDashboard creates Dashboard from Grafana's internal JSON dashboard definition
-func NewDashboard(dashJSON []byte, variables url.Values) Dashboard {
+func NewDashboard(dashJSON []byte, url string, apiToken string, variables url.Values) Dashboard {
 	var dash dashContainer
 	err := json.Unmarshal(dashJSON, &dash)
 	if err != nil {
 		panic(err)
 	}
-	d := dash.NewDashboard(variables)
+	d := dash.NewDashboard(url, apiToken, variables)
 	log.Infof("Populated dashboard datastructure: %+v\n", d)
 	return d
 }
 
-func (dc dashContainer) NewDashboard(variables url.Values) Dashboard {
+func (dc dashContainer) NewDashboard(url string, apiToken string, variables url.Values) Dashboard {
 	var dash Dashboard
+	iteration := int(time.Now().UnixNano() / int64(time.Millisecond))
+
 	dash.Title = dc.Dashboard.Title
+	dash.Templating = dc.Dashboard.Templating
 	dash.VariableValues = getVariablesValues(variables)
+	dash.url = url
+	dash.apiToken = apiToken
+	dash.Iteration = iteration
 
 	if len(dc.Dashboard.Rows) == 0 {
 		return populatePanelsFromV5JSON(dash, dc)
@@ -172,32 +238,8 @@ func (dc dashContainer) NewDashboard(variables url.Values) Dashboard {
 }
 
 func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
-	// re := regexp.MustCompile(`\$\w+`)
-
 	for _, row := range dc.Dashboard.Rows {
-		// rowTitle := row.Title
-		// matched := re.FindString(rowTitle)
-
-		// for i, p := range row.Panels {
-		// if matched != "" {
-		//     for k, v := range p.ScopedVars {
-		//         if strings.TrimPrefix(matched, "$") == k {
-		//             rowTitle = re.ReplaceAllString(rowTitle, v.Value)
-		//         }
-		//     }
-		// }
-		// p.RowTitle = rowTitle
-		// row.Panels[i] = p
-		// dash.Panels = append(dash.Panels, p)
-		// }
 		dash.Rows = append(dash.Rows, row)
-	}
-
-	log.Errorf("888888888888: cap, %v\n", cap(dash.Rows))
-	log.Errorf("888888888888: len, %v\n", len(dash.Rows))
-
-	for _, row := range dash.Rows {
-		log.Errorf("999999999999999, %v\n", row.Title)
 	}
 
 	dash.process()

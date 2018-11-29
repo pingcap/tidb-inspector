@@ -57,7 +57,8 @@ const (
 )
 
 // Report groups functions related to genrating the report.
-// After reading and closing the pdf returned by Generate(), call Clean() to delete the pdf file as well the temporary build files
+// After reading and closing the pdf returned by Generate(),
+// call Clean() to delete the pdf file as well the temporary build files
 type Report interface {
 	Generate() (pdf io.ReadCloser, err error)
 	Clean()

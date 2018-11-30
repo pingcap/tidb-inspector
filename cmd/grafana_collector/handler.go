@@ -32,8 +32,6 @@ package main
 import (
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/ngaut/log"
@@ -43,7 +41,7 @@ import (
 
 // ServeReportHandler generates grafana dashboard pdf file and returns to client
 type ServeReportHandler struct {
-	newGrafanaClient func(url string, apiToken string, variables url.Values, timeRange grafana.TimeRange) grafana.Client
+	newGrafanaClient func(url string, apiToken string, timeRange grafana.TimeRange) grafana.Client
 	newReport        func(g grafana.Client, dashName string, timeRange grafana.TimeRange) report.Report
 }
 
@@ -57,7 +55,7 @@ func RegisterHandlers(router *mux.Router, reportServerV4, reportServerV5 ServeRe
 
 func (h ServeReportHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.Info("reporter called")
-	grafanaClient := h.newGrafanaClient(*proto+*ip, apiToken(req), dashVariables(req), time(req))
+	grafanaClient := h.newGrafanaClient(*proto+*ip, apiToken(req), time(req))
 	reporter := h.newReport(grafanaClient, dashID(req), time(req))
 
 	file, err := reporter.Generate()
@@ -96,20 +94,4 @@ func apiToken(r *http.Request) string {
 	apiToken := r.URL.Query().Get("apitoken")
 	log.Infof("called with API Token: %s", apiToken)
 	return apiToken
-}
-
-func dashVariables(r *http.Request) url.Values {
-	output := url.Values{}
-	for k, v := range r.URL.Query() {
-		if strings.HasPrefix(k, "var-") {
-			log.Infof("called with variable: %s: %v", k, v)
-			for _, singleV := range v {
-				output.Add(k, singleV)
-			}
-		}
-	}
-	if len(output) == 0 {
-		log.Info("called without variable")
-	}
-	return output
 }

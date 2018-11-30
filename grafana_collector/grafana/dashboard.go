@@ -79,15 +79,14 @@ type TemplatingVariable struct {
 // Dashboard represents a Grafana dashboard
 // This is used to unmarshal the dashbaord JSON
 type Dashboard struct {
-	Title          string
-	Templating     map[string][]TemplatingVariable
-	Rows           []Row
-	Panels         []Panel
-	VariableValues string
-	url            string
-	apiToken       string
-	timeRange      TimeRange
-	iteration      int
+	Title      string
+	Templating map[string][]TemplatingVariable
+	Rows       []Row
+	Panels     []Panel
+	url        string
+	apiToken   string
+	timeRange  TimeRange
+	iteration  int
 }
 
 type dashContainer struct {
@@ -262,13 +261,13 @@ func (d *Dashboard) getNextPanelID() int {
 }
 
 // NewDashboard creates Dashboard from Grafana's internal JSON dashboard definition
-func NewDashboard(dashJSON []byte, url string, apiToken string, variables url.Values, timeRange TimeRange) Dashboard {
+func NewDashboard(dashJSON []byte, url string, apiToken string, timeRange TimeRange) Dashboard {
 	var dash dashContainer
 	err := json.Unmarshal(dashJSON, &dash)
 	if err != nil {
 		panic(err)
 	}
-	d := dash.NewDashboard(url, apiToken, variables, timeRange)
+	d := dash.NewDashboard(url, apiToken, timeRange)
 
 	b, err := json.MarshalIndent(d, "", "    ")
 	if err != nil {
@@ -278,13 +277,12 @@ func NewDashboard(dashJSON []byte, url string, apiToken string, variables url.Va
 	return d
 }
 
-func (dc dashContainer) NewDashboard(url string, apiToken string, variables url.Values, timeRange TimeRange) Dashboard {
+func (dc dashContainer) NewDashboard(url string, apiToken string, timeRange TimeRange) Dashboard {
 	var dash Dashboard
 	iteration := int(time.Now().UnixNano() / int64(time.Millisecond))
 
 	dash.Title = dc.Dashboard.Title
 	dash.Templating = dc.Dashboard.Templating
-	dash.VariableValues = getVariablesValues(variables)
 	dash.url = url
 	dash.apiToken = apiToken
 	dash.iteration = iteration

@@ -67,6 +67,11 @@ const (
 	boundaryTimeRegExp = "^(.*?)/([dwMy])$"
 )
 
+// NewIteration ... returns the number of milliseconds elapsed since January 1, 1970 UTC.
+func NewIteration() int {
+	return int(time.Now().UnixNano() / int64(time.Millisecond))
+}
+
 // NewTimeRange ... creates a new TimeRange
 func NewTimeRange(from, to string) TimeRange {
 	if from == "" {
@@ -167,7 +172,6 @@ func add(b boundary) int {
 	if b == To {
 		return 1
 	}
-	// b == From
 	return 0
 }
 
@@ -175,7 +179,6 @@ func daysToWeekBoundary(wd time.Weekday, b boundary) int {
 	if b == To {
 		return 1 + int(time.Saturday) - int(wd)
 	}
-	//b == From
 	return -int(wd)
 }
 

@@ -34,7 +34,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -168,6 +167,10 @@ func (d *Dashboard) process() {
 		row := d.Rows[i]
 		if row.Repeat != "" {
 			d.repeatRow(row, i)
+		} else if row.RepeatRowID != 0 && row.RepeatIteration != d.iteration {
+			d.removeRow(i)
+			i = i - 1
+			continue
 		} else {
 			rowTitle := row.Title
 			for j := range row.Panels {
@@ -229,6 +232,17 @@ func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex i
 
 	sourceRowID := sourceRowIndex + 1
 
+	for i := 0; i < len(d.Rows); i++ {
+		row := d.Rows[i]
+		if row.RepeatRowID == sourceRowID && row.RepeatIteration != d.iteration {
+			d.Rows[i].Title = rowTitle
+			d.Rows[i].Repeat = ""
+			d.Rows[i].RepeatRowID = sourceRowID
+			d.Rows[i].RepeatIteration = d.iteration
+			return
+		}
+	}
+
 	repeat := Row{}
 	repeat.Repeat = ""
 	repeat.RepeatRowID = sourceRowID
@@ -271,7 +285,7 @@ func NewDashboard(dashJSON []byte, url string, apiToken string, timeRange TimeRa
 
 	b, err := json.MarshalIndent(d, "", "    ")
 	if err != nil {
-		log.Errorf("marchaling populated dashboard error: %v\n", err)
+		log.Errorf("marshaling populated dashboard error: %v\n", err)
 	}
 	log.Infof("populated dashboard datastructure: %s\n", string(b))
 	return d
@@ -279,14 +293,14 @@ func NewDashboard(dashJSON []byte, url string, apiToken string, timeRange TimeRa
 
 func (dc dashContainer) NewDashboard(url string, apiToken string, timeRange TimeRange) Dashboard {
 	var dash Dashboard
-	iteration := int(time.Now().UnixNano() / int64(time.Millisecond))
+	iteration := NewIteration()
 
 	dash.Title = dc.Dashboard.Title
 	dash.Templating = dc.Dashboard.Templating
 	dash.url = url
 	dash.apiToken = apiToken
-	dash.iteration = iteration
 	dash.timeRange = timeRange
+	dash.iteration = iteration
 
 	if len(dc.Dashboard.Rows) == 0 {
 		return populatePanelsFromV5JSON(dash, dc)
@@ -331,12 +345,4 @@ func (p Panel) IsSingleStat() bool {
 // IsVisible ... checks if Row is visible
 func (r Row) IsVisible() bool {
 	return r.Showtitle
-}
-
-func getVariablesValues(variables url.Values) string {
-	values := []string{}
-	for _, v := range variables {
-		values = append(values, strings.Join(v, ", "))
-	}
-	return strings.Join(values, ", ")
 }

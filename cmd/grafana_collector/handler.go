@@ -43,8 +43,8 @@ import (
 
 // ServeReportHandler generates grafana dashboard pdf file and returns to client
 type ServeReportHandler struct {
-	newGrafanaClient func(url string, apiToken string, variables url.Values) grafana.Client
-	newReport        func(g grafana.Client, dashName string, time grafana.TimeRange) report.Report
+	newGrafanaClient func(url string, apiToken string, variables url.Values, timeRange grafana.TimeRange) grafana.Client
+	newReport        func(g grafana.Client, dashName string, timeRange grafana.TimeRange) report.Report
 }
 
 // RegisterHandlers registers all http.Handler with their associated routes to
@@ -56,13 +56,13 @@ func RegisterHandlers(router *mux.Router, reportServerV4, reportServerV5 ServeRe
 }
 
 func (h ServeReportHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Info("Reporter called")
-	grafanaClient := h.newGrafanaClient(*proto+*ip, apiToken(req), dashVariables(req))
+	log.Info("reporter called")
+	grafanaClient := h.newGrafanaClient(*proto+*ip, apiToken(req), dashVariables(req), time(req))
 	reporter := h.newReport(grafanaClient, dashID(req), time(req))
 
 	file, err := reporter.Generate()
 	if err != nil {
-		log.Errorf("Error generating report: %v", err)
+		log.Errorf("generating report error: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -71,30 +71,30 @@ func (h ServeReportHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 
 	_, err = io.Copy(w, file)
 	if err != nil {
-		log.Errorf("Error copying pdf data to response: %v", err)
+		log.Errorf("copying pdf data to response error: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	log.Info("Report generated correctly")
+	log.Info("report generated correctly")
 }
 
 func dashID(r *http.Request) string {
 	vars := mux.Vars(r)
 	d := vars["dashId"]
-	log.Infof("Called with dashboard: %s", d)
+	log.Infof("called with dashboard: %s", d)
 	return d
 }
 
 func time(r *http.Request) grafana.TimeRange {
 	params := r.URL.Query()
 	t := grafana.NewTimeRange(params.Get("from"), params.Get("to"))
-	log.Infof("Called with time range: %v", t)
+	log.Infof("called with time range: %v", t)
 	return t
 }
 
 func apiToken(r *http.Request) string {
 	apiToken := r.URL.Query().Get("apitoken")
-	log.Infof("Called with API Token: %s", apiToken)
+	log.Infof("called with API Token: %s", apiToken)
 	return apiToken
 }
 
@@ -102,14 +102,14 @@ func dashVariables(r *http.Request) url.Values {
 	output := url.Values{}
 	for k, v := range r.URL.Query() {
 		if strings.HasPrefix(k, "var-") {
-			log.Infof("Called with variable: %s: %v", k, v)
+			log.Infof("called with variable: %s: %v", k, v)
 			for _, singleV := range v {
 				output.Add(k, singleV)
 			}
 		}
 	}
 	if len(output) == 0 {
-		log.Info("Called without variable")
+		log.Info("called without variable")
 	}
 	return output
 }

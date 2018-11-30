@@ -78,7 +78,7 @@ func main() {
 	}
 
 	if *fontDir == "" {
-		log.Fatalf("missing parameter: -font-dir")
+		log.Fatal("missing parameter: -font-dir")
 	}
 	report.SetFontDir(*fontDir)
 

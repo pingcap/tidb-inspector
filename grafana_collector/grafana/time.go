@@ -78,6 +78,22 @@ func NewTimeRange(from, to string) TimeRange {
 	return TimeRange{from, to}
 }
 
+// FromToUnix ... Formats Grafana 'From' time spec into a Unix time, the number
+// of seconds elapsed since January 1, 1970 UTC.
+func (tr TimeRange) FromToUnix() int {
+	n := newNow()
+	t := n.parseFrom(tr.From)
+	return int(t.UnixNano() / int64(time.Second))
+}
+
+// ToToUnix ... Formats Grafana 'To' time spec into a Unix time, the number
+// of seconds elapsed since January 1, 1970 UTC.
+func (tr TimeRange) ToToUnix() int {
+	n := newNow()
+	t := n.parseFrom(tr.To)
+	return int(t.UnixNano() / int64(time.Second))
+}
+
 // FromFormatted ... Formats Grafana 'From' time spec into absolute printable UTC time
 func (tr TimeRange) FromFormatted() string {
 	n := newNow()

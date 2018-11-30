@@ -1,3 +1,32 @@
+// Copyright 2018 PingCAP, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/*
+   Copyright 2016 Vastech SA (PTY) LTD
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package grafana
 
 import (
@@ -57,7 +86,8 @@ type Dashboard struct {
 	VariableValues string
 	url            string
 	apiToken       string
-	Iteration      int
+	timeRange      TimeRange
+	iteration      int
 }
 
 type dashContainer struct {
@@ -87,27 +117,36 @@ func unique(input []string) []string {
 	return result
 }
 
-func (d *Dashboard) getTemplatingVariable(tv TemplatingVariable) []string {
+func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string, error) {
 	re := regexp.MustCompile(`label_values\((\w+),\s*(\w+)\)$`)
 	matched := re.FindStringSubmatch(tv.Query)
 	metric := matched[1]
 	label := matched[2]
 
-	metricURL := fmt.Sprintf("%s/api/datasources/proxy/1/api/v1/series?match[]=%s&start=1543386918&end=1543390518", d.url, metric)
+	metricURL := fmt.Sprintf("%s/api/datasources/proxy/1/api/v1/series?match[]=%s&start=%d&end=%d", d.url, metric, d.timeRange.FromToUnix(), d.timeRange.ToToUnix())
 
-	log.Infof("request metric at %s", metricURL)
+	log.Infof("request metric at %s\n", metricURL)
 
 	clientTimeout := time.Duration(300) * time.Second
 	client := &http.Client{Timeout: clientTimeout}
-	req, _ := http.NewRequest("GET", metricURL, nil)
+	req, err := http.NewRequest("GET", metricURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating metric request for %v: %v", metricURL, err)
+	}
 
 	if d.apiToken != "" {
 		req.Header.Add("Authorization", "Bearer "+d.apiToken)
 	}
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing metric request for %v: %v", metricURL, err)
+	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading metric response body from %v: %v", metricURL, err)
+	}
 
 	var result MetircResult
 	json.Unmarshal(body, &result)
@@ -122,7 +161,7 @@ func (d *Dashboard) getTemplatingVariable(tv TemplatingVariable) []string {
 
 	uniqueLabelResult := unique(labelResult)
 	sort.Strings(uniqueLabelResult)
-	return uniqueLabelResult
+	return uniqueLabelResult, nil
 }
 
 func (d *Dashboard) process() {
@@ -134,6 +173,11 @@ func (d *Dashboard) process() {
 		row := d.Rows[i]
 		if row.Repeat != "" {
 			d.repeatRow(row, i)
+		} else {
+			rowTitle := row.Title
+			for j := range row.Panels {
+				d.Rows[i].Panels[j].RowTitle = rowTitle
+			}
 		}
 	}
 }
@@ -144,6 +188,7 @@ func (d *Dashboard) removeRow(rowIndex int) {
 
 func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 	var (
+		err      error
 		exist    bool
 		selected []string
 	)
@@ -152,7 +197,10 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 	for _, tv := range d.Templating["list"] {
 		if tv.Name == label {
 			exist = true
-			selected = d.getTemplatingVariable(tv)
+			selected, err = d.getTemplatingVariableValue(tv)
+			if err != nil {
+				log.Errorf("getting templateing varaible value error: %v\n", err)
+			}
 		}
 	}
 
@@ -166,7 +214,6 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 }
 
 func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int, label string, option string) {
-
 	re := regexp.MustCompile(`\$\w+`)
 	rowTitle := sourceRow.Title
 	matched := re.FindString(rowTitle)
@@ -190,7 +237,7 @@ func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex i
 	repeat := Row{}
 	repeat.Repeat = ""
 	repeat.RepeatRowID = sourceRowID
-	repeat.RepeatIteration = d.Iteration
+	repeat.RepeatIteration = d.iteration
 	repeat.Panels = make([]Panel, len(sourceRow.Panels))
 	copy(repeat.Panels, sourceRow.Panels)
 
@@ -204,7 +251,6 @@ func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex i
 		d.Rows[sourceRowIndex+repeatIndex].Panels[i].RowTitle = rowTitle
 		d.Rows[sourceRowIndex+repeatIndex].Panels[i].ScopedVars = map[string]ScopedVar{label: {Text: option, Value: option}}
 	}
-
 }
 
 func (d *Dashboard) getNextPanelID() int {
@@ -220,23 +266,23 @@ func (d *Dashboard) getNextPanelID() int {
 }
 
 // NewDashboard creates Dashboard from Grafana's internal JSON dashboard definition
-func NewDashboard(dashJSON []byte, url string, apiToken string, variables url.Values) Dashboard {
+func NewDashboard(dashJSON []byte, url string, apiToken string, variables url.Values, timeRange TimeRange) Dashboard {
 	var dash dashContainer
 	err := json.Unmarshal(dashJSON, &dash)
 	if err != nil {
 		panic(err)
 	}
-	d := dash.NewDashboard(url, apiToken, variables)
+	d := dash.NewDashboard(url, apiToken, variables, timeRange)
 
 	b, err := json.MarshalIndent(d, "", "    ")
 	if err != nil {
-		log.Errorf("Error marchaling populated dashboard: %v", err)
+		log.Errorf("marchaling populated dashboard error: %v\n", err)
 	}
-	log.Infof("Populated dashboard datastructure: %s\n", string(b))
+	log.Infof("populated dashboard datastructure: %s\n", string(b))
 	return d
 }
 
-func (dc dashContainer) NewDashboard(url string, apiToken string, variables url.Values) Dashboard {
+func (dc dashContainer) NewDashboard(url string, apiToken string, variables url.Values, timeRange TimeRange) Dashboard {
 	var dash Dashboard
 	iteration := int(time.Now().UnixNano() / int64(time.Millisecond))
 
@@ -245,7 +291,8 @@ func (dc dashContainer) NewDashboard(url string, apiToken string, variables url.
 	dash.VariableValues = getVariablesValues(variables)
 	dash.url = url
 	dash.apiToken = apiToken
-	dash.Iteration = iteration
+	dash.iteration = iteration
+	dash.timeRange = timeRange
 
 	if len(dc.Dashboard.Rows) == 0 {
 		return populatePanelsFromV5JSON(dash, dc)
@@ -258,7 +305,14 @@ func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
 		dash.Rows = append(dash.Rows, row)
 	}
 
+	// handle row repeats
 	dash.process()
+
+	for _, row := range dash.Rows {
+		for _, p := range row.Panels {
+			dash.Panels = append(dash.Panels, p)
+		}
+	}
 	return dash
 }
 
@@ -272,7 +326,7 @@ func populatePanelsFromV5JSON(dash Dashboard, dc dashContainer) Dashboard {
 	return dash
 }
 
-// IsSingleStat ... checks if panel is singlestat
+// IsSingleStat ... checks if Panel is singlestat
 func (p Panel) IsSingleStat() bool {
 	if p.Type == "singlestat" {
 		return true
@@ -280,7 +334,7 @@ func (p Panel) IsSingleStat() bool {
 	return false
 }
 
-// IsVisible ... checks if row is visible
+// IsVisible ... checks if Row is visible
 func (r Row) IsVisible() bool {
 	return r.Showtitle
 }

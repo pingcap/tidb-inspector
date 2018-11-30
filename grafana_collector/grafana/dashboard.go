@@ -127,7 +127,7 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 
 	log.Infof("request metric at %s\n", metricURL)
 
-	clientTimeout := time.Duration(300) * time.Second
+	clientTimeout := time.Duration(60) * time.Second
 	client := &http.Client{Timeout: clientTimeout}
 	req, err := http.NewRequest("GET", metricURL, nil)
 	if err != nil {
@@ -165,10 +165,6 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 }
 
 func (d *Dashboard) process() {
-	if len(d.Templating["list"]) == 0 {
-		return
-	}
-
 	for i := 0; i < len(d.Rows); i++ {
 		row := d.Rows[i]
 		if row.Repeat != "" {
@@ -305,7 +301,7 @@ func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
 		dash.Rows = append(dash.Rows, row)
 	}
 
-	// handle row repeats
+	// handle Row repeats and RowTitle
 	dash.process()
 
 	for _, row := range dash.Rows {

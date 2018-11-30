@@ -253,14 +253,14 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 		// Add two images on every page
 		if count%2 == 0 {
 			pdf.SetX(cfg.Position.X)
-			pdf.SetY(60.0)
+			pdf.SetY(cfg.Position.TitleY1)
 			pdf.Cell(nil, fmt.Sprintf("Row: %s, Panel: %s", p.RowTitle, p.Title))
-			err = pdf.Image(imgPath, cfg.Position.X, cfg.Position.Y1, rect)
+			err = pdf.Image(imgPath, cfg.Position.X, cfg.Position.ImageY1, rect)
 		} else {
 			pdf.SetX(cfg.Position.X)
-			pdf.SetY(330.0)
+			pdf.SetY(cfg.Position.TitleY2)
 			pdf.Cell(nil, fmt.Sprintf("Row: %s, Panel: %s", p.RowTitle, p.Title))
-			err = pdf.Image(imgPath, cfg.Position.X, cfg.Position.Y2, rect)
+			err = pdf.Image(imgPath, cfg.Position.X, cfg.Position.ImageY2, rect)
 			pdf.AddPage()
 		}
 		if err != nil {

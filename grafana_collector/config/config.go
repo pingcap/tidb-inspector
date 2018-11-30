@@ -32,10 +32,12 @@ type rect struct {
 }
 
 type position struct {
-	X  float64
-	Y1 float64
-	Y2 float64
-	Br float64
+	X       float64
+	TitleY1 float64 `toml:"title-y1"`
+	TitleY2 float64 `toml:"title-y2"`
+	ImageY1 float64 `toml:"image-y1"`
+	ImageY2 float64 `toml:"image-y2"`
+	Br      float64
 }
 
 var defaultConf = Config{
@@ -60,15 +62,17 @@ var defaultConf = Config{
 			Height: 240.0,
 		},
 		"singlestat": {
-			Width:  300.0,
-			Height: 150.0,
+			Width:  480.0,
+			Height: 93.0,
 		},
 	},
 	Position: position{
-		X:  50.0,
-		Y1: 80.0,
-		Y2: 350.0,
-		Br: 20.0,
+		X:       50.0,
+		TitleY1: 60.0,
+		TitleY2: 350.0,
+		ImageY1: 80.0,
+		ImageY2: 370.0,
+		Br:      20.0,
 	},
 }
 

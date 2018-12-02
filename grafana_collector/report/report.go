@@ -103,7 +103,7 @@ func (rep *report) Generate() (pdf io.ReadCloser, err error) {
 	// working stage：fetch panel images
 	err = rep.renderPNGsParallel(dash)
 	if err != nil {
-		return nil, errors.Errorf("rendering PNGs in parralel for dash %+v error: %v", dash, err)
+		return nil, errors.Errorf("rendering PNGs in parallel for dash %+v error: %v. It is recommended to select time range within 6 hours on the Dashboard. Otherwise, the grafana timeout problem might occur.", dash, err)
 	}
 
 	// working stage：render panel images to pdf

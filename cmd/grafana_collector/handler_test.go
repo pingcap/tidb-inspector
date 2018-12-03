@@ -35,7 +35,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -57,11 +56,9 @@ func TestV4ServeReportHandler(t *testing.T) {
 	Convey("When the v4 report server handler is called", t, func() {
 		//mock new grafana client function to capture and validate its input parameters
 		var clAPIToken string
-		var clVars url.Values
-		newGrafanaClient := func(url string, apiToken string, variables url.Values) grafana.Client {
+		newGrafanaClient := func(url string, apiToken string, timeRange grafana.TimeRange) grafana.Client {
 			clAPIToken = apiToken
-			clVars = variables
-			return grafana.NewV4Client(url, apiToken, variables)
+			return grafana.NewV4Client(url, apiToken, timeRange)
 		}
 		//mock new report function to capture and validate its input parameters
 		var repDashName string
@@ -85,22 +82,6 @@ func TestV4ServeReportHandler(t *testing.T) {
 			router.ServeHTTP(rec, req)
 			So(clAPIToken, ShouldEqual, "1234")
 		})
-
-		Convey("It should extract the grafana variables and forward them to the new Grafana Client ", func() {
-			req, _ := http.NewRequest("GET", "/api/report/testDash?var-test=testValue", nil)
-			router.ServeHTTP(rec, req)
-			expected := url.Values{}
-			expected.Add("var-test", "testValue")
-			So(clVars, ShouldResemble, expected)
-
-			Convey("Variables should not contain other query parameters ", func() {
-				req, _ := http.NewRequest("GET", "/api/report/testDash?var-test=testValue&apitoken=1234", nil)
-				router.ServeHTTP(rec, req)
-				expected := url.Values{}
-				expected.Add("var-test", "testValue") //apitoken not expected here
-				So(clVars, ShouldResemble, expected)
-			})
-		})
 	})
 }
 
@@ -108,11 +89,9 @@ func TestV5ServeReportHandler(t *testing.T) {
 	Convey("When the v5 report server handler is called", t, func() {
 		//mock new grafana client function to capture and validate its input parameters
 		var clAPIToken string
-		var clVars url.Values
-		newGrafanaClient := func(url string, apiToken string, variables url.Values) grafana.Client {
+		newGrafanaClient := func(url string, apiToken string, timeRange grafana.TimeRange) grafana.Client {
 			clAPIToken = apiToken
-			clVars = variables
-			return grafana.NewV4Client(url, apiToken, variables)
+			return grafana.NewV5Client(url, apiToken, timeRange)
 		}
 		//mock new report function to capture and validate its input parameters
 		var repDashName string
@@ -135,22 +114,6 @@ func TestV5ServeReportHandler(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/api/v5/report/testDash?apitoken=1234", nil)
 			router.ServeHTTP(rec, req)
 			So(clAPIToken, ShouldEqual, "1234")
-		})
-
-		Convey("It should extract the grafana variables and forward them to the new Grafana Client ", func() {
-			req, _ := http.NewRequest("GET", "/api/v5/report/testDash?var-test=testValue", nil)
-			router.ServeHTTP(rec, req)
-			expected := url.Values{}
-			expected.Add("var-test", "testValue")
-			So(clVars, ShouldResemble, expected)
-
-			Convey("Variables should not contain other query parameters ", func() {
-				req, _ := http.NewRequest("GET", "/api/v5/report/testDash?var-test=testValue&apitoken=1234", nil)
-				router.ServeHTTP(rec, req)
-				expected := url.Values{}
-				expected.Add("var-test", "testValue") //apitoken not expected here
-				So(clVars, ShouldResemble, expected)
-			})
 		})
 	})
 }

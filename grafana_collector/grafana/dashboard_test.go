@@ -30,7 +30,6 @@
 package grafana
 
 import (
-	"net/url"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -56,7 +55,7 @@ func TestV4Dashboard(t *testing.T) {
 "Meta":
 	{"Slug":"testDash"}
 }`
-		dash := NewDashboard([]byte(v4DashJSON), url.Values{})
+		dash := NewDashboard([]byte(v4DashJSON), "", "", TimeRange{"now-1h", "now"})
 
 		Convey("Panel IsSingelStat should work for all panels", func() {
 			So(dash.Panels[0].IsSingleStat(), ShouldBeTrue)
@@ -86,7 +85,7 @@ func TestV5Dashboard(t *testing.T) {
 "Meta":
 	{"Slug":"testDash"}
 }`
-		dash := NewDashboard([]byte(v5DashJSON), url.Values{})
+		dash := NewDashboard([]byte(v5DashJSON), "", "", TimeRange{"now-1h", "now"})
 
 		Convey("Panel IsSingelStat should work for all panels", func() {
 			So(dash.Panels[0].IsSingleStat(), ShouldBeTrue)
@@ -99,26 +98,6 @@ func TestV5Dashboard(t *testing.T) {
 			So(dash.Panels[0].ID, ShouldEqual, 0)
 			So(dash.Panels[1].ID, ShouldEqual, 1)
 			So(dash.Panels[2].ID, ShouldEqual, 2)
-		})
-	})
-}
-
-func TestVariableValues(t *testing.T) {
-	Convey("When creating a dashboard and passing url varialbes in", t, func() {
-		const v5DashJSON = `
-{
-	"Dashboard":
-		{
-		}
-}`
-		vars := url.Values{}
-		vars.Add("var-one", "oneval")
-		vars.Add("var-two", "twoval")
-		dash := NewDashboard([]byte(v5DashJSON), vars)
-
-		Convey("The dashboard should contain the variable values in a random order", func() {
-			So(dash.VariableValues, ShouldContainSubstring, "oneval")
-			So(dash.VariableValues, ShouldContainSubstring, "twoval")
 		})
 	})
 }

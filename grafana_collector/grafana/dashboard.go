@@ -42,6 +42,11 @@ import (
 	"github.com/ngaut/log"
 )
 
+var (
+	queryMetricRegexp = regexp.MustCompile(`^label_values\((.+),\s*([a-zA-Z_][a-zA-Z0-9_]+)\)$`)
+	variableRegexp    = regexp.MustCompile(`\$.+`)
+)
+
 // ScopedVar represents template variable
 type ScopedVar struct {
 	Text  string
@@ -63,7 +68,7 @@ type Row struct {
 	Showtitle       bool // Row is visible or hidden
 	Title           string
 	Repeat          string
-	RepeatIteration int
+	RepeatIteration int64
 	RepeatRowID     int
 	Panels          []Panel
 }
@@ -85,7 +90,7 @@ type Dashboard struct {
 	url        string
 	apiToken   string
 	timeRange  TimeRange
-	iteration  int
+	iteration  int64
 }
 
 type dashContainer struct {
@@ -101,25 +106,40 @@ type MetircResult struct {
 	Data   []map[string]interface{}
 }
 
-func unique(input []string) []string {
-	result := make([]string, 0, len(input))
-	m := make(map[string]bool)
+func handleMetircResult(mr MetircResult, label string) []string {
+	result := make([]string, 0, len(mr.Data))
+	filter := make(map[string]bool)
 
-	for _, item := range input {
-		if _, ok := m[item]; !ok {
-			m[item] = true
-			result = append(result, item)
+	for _, m := range mr.Data {
+		if v, ok := m[label].(string); ok {
+			if _, exist := filter[v]; !exist {
+				filter[v] = true
+				result = append(result, v)
+			}
 		}
 	}
 
+	sort.Strings(result)
 	return result
 }
 
-func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string, error) {
-	re := regexp.MustCompile(`label_values\((\w+),\s*(\w+)\)$`)
-	matched := re.FindStringSubmatch(tv.Query)
+func getMetricAndLabel(tv TemplatingVariable) (string, string, error) {
+	matched := queryMetricRegexp.FindStringSubmatch(tv.Query)
 	metric := matched[1]
 	label := matched[2]
+
+	if metric != "" && label != "" {
+		return metric, label, nil
+	}
+
+	return "", "", fmt.Errorf("%s should be label_values(metric, label) format", tv.Query)
+}
+
+func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string, error) {
+	metric, label, err := getMetricAndLabel(tv)
+	if err != nil {
+		return nil, err
+	}
 
 	metricURL := fmt.Sprintf("%s/api/datasources/proxy/1/api/v1/series?match[]=%s&start=%d&end=%d", d.url, metric, d.timeRange.FromToUnix(), d.timeRange.ToToUnix())
 
@@ -129,7 +149,7 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 	client := &http.Client{Timeout: clientTimeout}
 	req, err := http.NewRequest("GET", metricURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating metric request for %v: %v", metricURL, err)
+		return nil, fmt.Errorf("creating metric request for %v error: %v", metricURL, err)
 	}
 
 	if d.apiToken != "" {
@@ -137,29 +157,27 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error executing metric request for %v: %v", metricURL, err)
+		return nil, fmt.Errorf("executing metric request for %v error: %v", metricURL, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading metric response body from %v: %v", metricURL, err)
+		return nil, fmt.Errorf("reading metric response body from %v error: %v", metricURL, err)
 	}
 
 	var result MetircResult
-	json.Unmarshal(body, &result)
+	err = json.Unmarshal(body, &result)
 
-	labelResult := make([]string, 0, len(result.Data))
-	for _, m := range result.Data {
-		s, ok := m[label].(string)
-		if ok {
-			labelResult = append(labelResult, s)
-		}
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling metric response from %v error: %v", metricURL, err)
 	}
 
-	uniqueLabelResult := unique(labelResult)
-	sort.Strings(uniqueLabelResult)
-	return uniqueLabelResult, nil
+	if result.Status != "success" {
+		return nil, fmt.Errorf("metric request status from %v is not success: %v", metricURL, err)
+	}
+
+	return handleMetircResult(result, label), nil
 }
 
 func (d *Dashboard) process() {
@@ -199,6 +217,7 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 			if err != nil {
 				log.Errorf("getting templateing varaible value error: %v\n", err)
 			}
+			break
 		}
 	}
 
@@ -212,12 +231,11 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 }
 
 func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int, label string, option string) {
-	re := regexp.MustCompile(`\$\w+`)
 	rowTitle := sourceRow.Title
-	matched := re.FindString(rowTitle)
+	matched := variableRegexp.FindString(rowTitle)
 	if matched != "" {
 		if strings.TrimPrefix(matched, "$") == label {
-			rowTitle = re.ReplaceAllString(rowTitle, option)
+			rowTitle = variableRegexp.ReplaceAllString(rowTitle, option)
 		}
 	}
 
@@ -293,7 +311,7 @@ func NewDashboard(dashJSON []byte, url string, apiToken string, timeRange TimeRa
 
 func (dc dashContainer) NewDashboard(url string, apiToken string, timeRange TimeRange) Dashboard {
 	var dash Dashboard
-	iteration := NewIteration()
+	iteration := UnixSecond(time.Now())
 
 	dash.Title = dc.Dashboard.Title
 	dash.Templating = dc.Dashboard.Templating

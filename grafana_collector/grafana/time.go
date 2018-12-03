@@ -67,9 +67,9 @@ const (
 	boundaryTimeRegExp = "^(.*?)/([dwMy])$"
 )
 
-// NewIteration ... returns the number of milliseconds elapsed since January 1, 1970 UTC.
-func NewIteration() int {
-	return int(time.Now().UnixNano() / int64(time.Millisecond))
+// UnixSecond ... returns the number of seconds elapsed since January 1, 1970 UTC.
+func UnixSecond(t time.Time) int64 {
+	return int64(t.UnixNano() / int64(time.Second))
 }
 
 // NewTimeRange ... creates a new TimeRange
@@ -85,18 +85,18 @@ func NewTimeRange(from, to string) TimeRange {
 
 // FromToUnix ... Formats Grafana 'From' time spec into a Unix time, the number
 // of seconds elapsed since January 1, 1970 UTC.
-func (tr TimeRange) FromToUnix() int {
+func (tr TimeRange) FromToUnix() int64 {
 	n := newNow()
 	t := n.parseFrom(tr.From)
-	return int(t.UnixNano() / int64(time.Second))
+	return UnixSecond(t)
 }
 
 // ToToUnix ... Formats Grafana 'To' time spec into a Unix time, the number
 // of seconds elapsed since January 1, 1970 UTC.
-func (tr TimeRange) ToToUnix() int {
+func (tr TimeRange) ToToUnix() int64 {
 	n := newNow()
-	t := n.parseFrom(tr.To)
-	return int(t.UnixNano() / int64(time.Second))
+	t := n.parseTo(tr.To)
+	return UnixSecond(t)
 }
 
 // FromFormatted ... Formats Grafana 'From' time spec into absolute printable UTC time

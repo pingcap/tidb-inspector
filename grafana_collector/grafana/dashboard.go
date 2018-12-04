@@ -44,6 +44,8 @@ import (
 )
 
 var (
+	// query templating variable, we only support label_values(metric, label) format, see http://docs.grafana.org/features/datasources/prometheus/.
+	// regexp: https://github.com/grafana/grafana/blob/v4.6.3/public/app/plugins/datasource/prometheus/metric_find_query.js#L14
 	queryMetricRegexp = regexp.MustCompile(`^label_values\((.+),\s*([a-zA-Z_][a-zA-Z0-9_]+)\)$`)
 	variableRegexp    = regexp.MustCompile(`\$.+`)
 )
@@ -107,6 +109,7 @@ type MetircResult struct {
 	Data   []map[string]interface{}
 }
 
+// handleMetircResult ... handles query templating variable result,  and gets label's unique and sorted values
 func handleMetircResult(mr MetircResult, label string) []string {
 	result := make([]string, 0, len(mr.Data))
 	filter := make(map[string]bool)
@@ -124,6 +127,7 @@ func handleMetircResult(mr MetircResult, label string) []string {
 	return result
 }
 
+// getMetricAndLabel ... gets metric and label from templating variable's query, example: label_values(tikv_engine_block_cache_size_bytes, db)
 func getMetricAndLabel(tv TemplatingVariable) (string, string, error) {
 	matched := queryMetricRegexp.FindStringSubmatch(tv.Query)
 
@@ -136,6 +140,7 @@ func getMetricAndLabel(tv TemplatingVariable) (string, string, error) {
 	return "", "", errors.Errorf("%s should be label_values(metric, label) format", tv.Query)
 }
 
+// getTemplatingVariableValue ... creates request to grafana, and get templating variable's value, example: http://172.16.30.193:3000/api/datasources/proxy/1/api/v1/series?match[]=tikv_engine_block_cache_size_bytes&start=1543890299&end=1543893899
 func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string, error) {
 	metric, label, err := getMetricAndLabel(tv)
 	if err != nil {
@@ -181,15 +186,18 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 	return handleMetircResult(result, label), nil
 }
 
+// process ... adds dynamic Row data structure to dashboard, and handles Panel ID and ScopedVars, we only impliement repeatRow logic, see https://github.com/grafana/grafana/blob/v4.6.3/public/app/features/dashboard/dynamic_dashboard_srv.ts#L19
 func (d *Dashboard) process() error {
 	for i := 0; i < len(d.Rows); i++ {
 		row := d.Rows[i]
+		// handle row repeats
 		if row.Repeat != "" {
 			err := d.repeatRow(row, i)
 			if err != nil {
 				return errors.Wrap(err, "repeat Row error")
 			}
 		} else if row.RepeatRowID != 0 && row.RepeatIteration != d.iteration {
+			// clean up old left overs
 			d.removeRow(i)
 			i = i - 1
 			continue
@@ -282,6 +290,7 @@ func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex i
 	d.Rows[sourceRowIndex+repeatIndex] = repeat
 	d.Rows[sourceRowIndex+repeatIndex].Title = rowTitle
 
+	// set new panel ids and scopedVars
 	for i := range d.Rows[sourceRowIndex+repeatIndex].Panels {
 		d.Rows[sourceRowIndex+repeatIndex].Panels[i].ID = d.getNextPanelID()
 		d.Rows[sourceRowIndex+repeatIndex].Panels[i].RowTitle = rowTitle
@@ -289,6 +298,7 @@ func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex i
 	}
 }
 
+// getNextPanelID ... https://github.com/grafana/grafana/blob/v4.6.3/public/app/features/dashboard/model.ts#L159
 func (d *Dashboard) getNextPanelID() int {
 	max := 0
 	for _, row := range d.Rows {

@@ -30,7 +30,6 @@
 package grafana
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -41,6 +40,7 @@ import (
 
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -101,7 +101,7 @@ func (g client) GetDashboard(dashName string) (Dashboard, error) {
 	client := &http.Client{Timeout: clientTimeout}
 	req, err := http.NewRequest("GET", dashURL, nil)
 	if err != nil {
-		return Dashboard{}, fmt.Errorf("creating getDashboard request for %v error: %v", dashURL, err)
+		return Dashboard{}, errors.Errorf("creating getDashboard request for %s error: %v", dashURL, err)
 	}
 
 	if g.apiToken != "" {
@@ -109,20 +109,20 @@ func (g client) GetDashboard(dashName string) (Dashboard, error) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return Dashboard{}, fmt.Errorf("executing getDashboard request for %v error: %v", dashURL, err)
+		return Dashboard{}, errors.Errorf("executing getDashboard request for %s error: %v", dashURL, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return Dashboard{}, fmt.Errorf("reading getDashboard response body from %v: %v error", dashURL, err)
+		return Dashboard{}, errors.Errorf("reading getDashboard response body from %s: %v error", dashURL, err)
 	}
 
 	if resp.StatusCode != 200 {
-		return Dashboard{}, fmt.Errorf("obtaining dashboard from %v. Got Status %v, message: %v error", dashURL, resp.Status, string(body))
+		return Dashboard{}, errors.Errorf("obtaining dashboard from %s error, got status %s, message: %s", dashURL, resp.Status, string(body))
 	}
 
-	return NewDashboard(body, g.url, g.apiToken, g.timeRange), nil
+	return NewDashboard(body, g.url, g.apiToken, g.timeRange)
 }
 
 func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadCloser, error) {
@@ -137,34 +137,30 @@ func (g client) GetPanelPng(p Panel, dashName string, t TimeRange) (io.ReadClose
 	}
 	req, err := http.NewRequest("GET", panelURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating getPanelPng request for %v error: %v", panelURL, err)
+		return nil, errors.Errorf("creating getPanelPng request for %s error: %v", panelURL, err)
 	}
 	if g.apiToken != "" {
 		req.Header.Add("Authorization", "Bearer "+g.apiToken)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("executing getPanelPng request for %v error: %v", panelURL, err)
+		return nil, errors.Errorf("executing getPanelPng request for %s error: %v", panelURL, err)
 	}
 
 	for retries := 1; retries < 3 && resp.StatusCode != 200; retries++ {
 		getPanelRetryInterval := time.Duration(cfg.Grafana.RetryInterval) * time.Second
 		delay := getPanelRetryInterval * time.Duration(retries)
-		log.Errorf("obtaining render for panel %+v error, Status: %v, Retrying after %v...", p, resp.StatusCode, delay)
+		log.Errorf("obtaining render for panel %+v error, status: %d, retrying after %v...", p, resp.StatusCode, delay)
 		time.Sleep(delay)
 		resp, err = client.Do(req)
 		if err != nil {
-			return nil, fmt.Errorf("executing retry getPanelPng request for %v error: %v", panelURL, err)
+			return nil, errors.Errorf("executing getPanelPng retry request for %s error: %v", panelURL, err)
 		}
 	}
 
 	if resp.StatusCode != 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error reading response: %v", err)
-		}
-		log.Errorf("obtaining render error: %s", string(body))
-		return nil, errors.New("obtaining render error: " + resp.Status)
+		log.Errorf("obtaining panel image request from %s is not successful, status: %s", panelURL, resp.Status)
+		return nil, errors.Errorf("obtaining panel image request from %s is not successful, status: %s", panelURL, resp.Status)
 	}
 
 	return resp.Body, nil

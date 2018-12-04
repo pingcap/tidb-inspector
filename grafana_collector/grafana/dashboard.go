@@ -40,6 +40,7 @@ import (
 	"time"
 
 	"github.com/ngaut/log"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -125,20 +126,20 @@ func handleMetircResult(mr MetircResult, label string) []string {
 
 func getMetricAndLabel(tv TemplatingVariable) (string, string, error) {
 	matched := queryMetricRegexp.FindStringSubmatch(tv.Query)
-	metric := matched[1]
-	label := matched[2]
 
-	if metric != "" && label != "" {
+	if matched != nil {
+		metric := matched[1]
+		label := matched[2]
 		return metric, label, nil
 	}
 
-	return "", "", fmt.Errorf("%s should be label_values(metric, label) format", tv.Query)
+	return "", "", errors.Errorf("%s should be label_values(metric, label) format", tv.Query)
 }
 
 func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string, error) {
 	metric, label, err := getMetricAndLabel(tv)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	metricURL := fmt.Sprintf("%s/api/datasources/proxy/1/api/v1/series?match[]=%s&start=%d&end=%d", d.url, metric, d.timeRange.FromToUnix(), d.timeRange.ToToUnix())
@@ -149,7 +150,7 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 	client := &http.Client{Timeout: clientTimeout}
 	req, err := http.NewRequest("GET", metricURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating metric request for %v error: %v", metricURL, err)
+		return nil, fmt.Errorf("creating metric request for %s error: %v", metricURL, err)
 	}
 
 	if d.apiToken != "" {
@@ -157,34 +158,37 @@ func (d *Dashboard) getTemplatingVariableValue(tv TemplatingVariable) ([]string,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("executing metric request for %v error: %v", metricURL, err)
+		return nil, fmt.Errorf("executing metric request for %s error: %v", metricURL, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading metric response body from %v error: %v", metricURL, err)
+		return nil, fmt.Errorf("reading metric response body from %s error: %v", metricURL, err)
 	}
 
 	var result MetircResult
 	err = json.Unmarshal(body, &result)
 
 	if err != nil {
-		return nil, fmt.Errorf("unmarshaling metric response from %v error: %v", metricURL, err)
+		return nil, fmt.Errorf("unmarshaling metric response from %s error: %v", metricURL, err)
 	}
 
 	if result.Status != "success" {
-		return nil, fmt.Errorf("metric request status from %v is not success: %v", metricURL, err)
+		return nil, fmt.Errorf("metric request status from %s is not successful: %v", metricURL, err)
 	}
 
 	return handleMetircResult(result, label), nil
 }
 
-func (d *Dashboard) process() {
+func (d *Dashboard) process() error {
 	for i := 0; i < len(d.Rows); i++ {
 		row := d.Rows[i]
 		if row.Repeat != "" {
-			d.repeatRow(row, i)
+			err := d.repeatRow(row, i)
+			if err != nil {
+				return errors.Wrap(err, "repeat Row error")
+			}
 		} else if row.RepeatRowID != 0 && row.RepeatIteration != d.iteration {
 			d.removeRow(i)
 			i = i - 1
@@ -196,13 +200,15 @@ func (d *Dashboard) process() {
 			}
 		}
 	}
+
+	return nil
 }
 
 func (d *Dashboard) removeRow(rowIndex int) {
 	d.Rows = append(d.Rows[:rowIndex], d.Rows[rowIndex+1:]...)
 }
 
-func (d *Dashboard) repeatRow(row Row, rowIndex int) {
+func (d *Dashboard) repeatRow(row Row, rowIndex int) error {
 	var (
 		err      error
 		exist    bool
@@ -216,18 +222,21 @@ func (d *Dashboard) repeatRow(row Row, rowIndex int) {
 			selected, err = d.getTemplatingVariableValue(tv)
 			if err != nil {
 				log.Errorf("getting templateing varaible value error: %v\n", err)
+				return errors.Errorf("getting templateing varaible value error: %v\n", err)
 			}
 			break
 		}
 	}
 
 	if !exist {
-		return
+		return nil
 	}
 
 	for index, option := range selected {
 		d.getRowClone(row, index, rowIndex, label, option)
 	}
+
+	return nil
 }
 
 func (d *Dashboard) getRowClone(sourceRow Row, repeatIndex int, sourceRowIndex int, label string, option string) {
@@ -293,23 +302,28 @@ func (d *Dashboard) getNextPanelID() int {
 }
 
 // NewDashboard creates Dashboard from Grafana's internal JSON dashboard definition
-func NewDashboard(dashJSON []byte, url string, apiToken string, timeRange TimeRange) Dashboard {
+func NewDashboard(dashJSON []byte, url string, apiToken string, timeRange TimeRange) (Dashboard, error) {
 	var dash dashContainer
 	err := json.Unmarshal(dashJSON, &dash)
 	if err != nil {
-		panic(err)
+		return Dashboard{}, errors.Errorf("unmarshaling dashbaord %s error: %v", url, err)
 	}
-	d := dash.NewDashboard(url, apiToken, timeRange)
+
+	d, err := dash.NewDashboard(url, apiToken, timeRange)
+	if err != nil {
+		return Dashboard{}, errors.Wrap(err, "populate dashboard data structure error")
+	}
 
 	b, err := json.MarshalIndent(d, "", "    ")
 	if err != nil {
 		log.Errorf("marshaling populated dashboard error: %v\n", err)
 	}
-	log.Infof("populated dashboard datastructure: %s\n", string(b))
-	return d
+	log.Infof("populated dashboard data structure: %s\n", string(b))
+
+	return d, nil
 }
 
-func (dc dashContainer) NewDashboard(url string, apiToken string, timeRange TimeRange) Dashboard {
+func (dc dashContainer) NewDashboard(url string, apiToken string, timeRange TimeRange) (Dashboard, error) {
 	var dash Dashboard
 	iteration := UnixSecond(time.Now())
 
@@ -326,30 +340,33 @@ func (dc dashContainer) NewDashboard(url string, apiToken string, timeRange Time
 	return populatePanelsFromV4JSON(dash, dc)
 }
 
-func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) Dashboard {
+func populatePanelsFromV4JSON(dash Dashboard, dc dashContainer) (Dashboard, error) {
 	for _, row := range dc.Dashboard.Rows {
 		dash.Rows = append(dash.Rows, row)
 	}
 
 	// handle Row repeats and RowTitle
-	dash.process()
+	err := dash.process()
+	if err != nil {
+		return dash, errors.WithStack(err)
+	}
 
 	for _, row := range dash.Rows {
 		for _, p := range row.Panels {
 			dash.Panels = append(dash.Panels, p)
 		}
 	}
-	return dash
+	return dash, nil
 }
 
-func populatePanelsFromV5JSON(dash Dashboard, dc dashContainer) Dashboard {
+func populatePanelsFromV5JSON(dash Dashboard, dc dashContainer) (Dashboard, error) {
 	for _, p := range dc.Dashboard.Panels {
 		if p.Type == "row" {
 			continue
 		}
 		dash.Panels = append(dash.Panels, p)
 	}
-	return dash
+	return dash, nil
 }
 
 // IsSingleStat ... checks if Panel is singlestat

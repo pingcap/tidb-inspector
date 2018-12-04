@@ -36,11 +36,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pborman/uuid"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/config"
 	"github.com/pingcap/tidb-inspect-tools/grafana_collector/grafana"
+	"github.com/pkg/errors"
 	"github.com/signintech/gopdf"
 )
 
@@ -206,14 +206,14 @@ func (rep *report) NewPDF() (*gopdf.GoPdf, error) {
 	ttfPath := FontDir + cfg.Font.Ttf
 	err := pdf.AddTTFFont(cfg.Font.Family, ttfPath)
 	if err != nil {
-		log.Error(err.Error())
-		return nil, err
+		log.Errorf("add ttf font error: %v", err)
+		return nil, errors.Wrap(err, "add ttf font")
 	}
 
 	err = pdf.SetFont(cfg.Font.Family, "", cfg.Font.Size)
 	if err != nil {
-		log.Error(err.Error())
-		return nil, err
+		log.Errorf("set font error: %v", err)
+		return nil, errors.Wrap(err, "set font")
 	}
 
 	return pdf, nil
@@ -233,6 +233,9 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 	log.Infof("PDF templates config: %+v\n", cfg)
 
 	pdf, err := rep.NewPDF()
+	if err != nil {
+		return nil, errors.Wrap(err, "new pdf file")
+	}
 	rep.createHomePage(pdf, dash)
 
 	// setting rectangle size for grafana panel type: Graph/Singlestat
@@ -274,5 +277,5 @@ func (rep *report) renderPDF(dash grafana.Dashboard) (outputPDF *os.File, err er
 	// WritePdf(pdfPath string) func in gopdf doesn't return error
 	pdf.WritePdf(rep.pdfPath())
 	outputPDF, err = os.Open(rep.pdfPath())
-	return outputPDF, errors.Trace(err)
+	return outputPDF, errors.Wrap(err, "open pdf file")
 }

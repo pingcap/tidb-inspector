@@ -57,6 +57,8 @@ while (my $line = <>) {
 
     # raftstore. e.g. raftstore-1
     $command =~ s/^raftstore-\d*$/raftstore/;
+    # raftstore is renamed to raftstore-1-0 in 3.0
+    $command =~ s/^raftstore-\d*-\d*$/raftstore/;
 
     # SST importer. e.g. sst-importer0
     $command =~ s/^sst-importer\d*$/sst-importer/;
@@ -65,13 +67,21 @@ while (my $line = <>) {
     # ony low\d needs to be unified, because other priorities already have same thread names because of truncation.
     $command =~ s/^store-read-low\d*$/store-read-low/;
 
-    # rocksdb. e.g. rocksdb:bg0
+    # rocksdb. e.g. rocksdb:bg0 rocksdb:low0 rocksdb:high0
     $command =~ s/^rocksdb:bg\d*$/rocksdb:bg/;
+    $command =~ s/^rocksdb:low\d*$/rocksdb:low/;
+    $command =~ s/^rocksdb:high\d*$/rocksdb:high/;
 
     # snapshot sender. e.g. snap sender0
     $command =~ s/^snap sender\d*$/snap-sender/;
     # thread is renamed to snap-sender0 in newer versions
     $command =~ s/^snap-sender\d*$/snap-sender/;
+
+    # apply. e.g. apply-1
+    $command =~ s/^apply-\d*$/apply/;
+
+    # future-poller. e.g. futurue-poller-0
+    $command =~ s/^future-poller\d*$/future-poller/;
 
     $line = $command . " " . $pid . $remain;
   } elsif ($skip_thread) {

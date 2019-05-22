@@ -81,7 +81,7 @@ while (my $line = <>) {
     $command =~ s/^apply-\d*$/apply/;
 
     # future-poller. e.g. futurue-poller-0
-    $command =~ s/^future-poller\d*$/future-poller/;
+    $command =~ s/^future-poller-\d*$/future-poller/;
 
     $line = $command . " " . $pid . $remain;
   } elsif ($skip_thread) {

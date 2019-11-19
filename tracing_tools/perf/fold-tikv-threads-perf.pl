@@ -83,6 +83,12 @@ while (my $line = <>) {
     # future-poller. e.g. futurue-poller-0
     $command =~ s/^future-poller-\d*$/future-poller/;
 
+    # backup. e.g. backup-worker0
+    $command =~ s/^backup-worker\d*$/backup-worker/;
+
+    # sst importer. e.g. sst-importer0
+    $command =~ s/^sst-importer\d*$/sst-importer/;
+
     $line = $command . " " . $pid . $remain;
   } elsif ($skip_thread) {
     # The thread is skipped.

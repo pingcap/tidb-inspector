@@ -89,6 +89,9 @@ while (my $line = <>) {
     # sst importer. e.g. sst-importer0
     $command =~ s/^sst-importer\d*$/sst-importer/;
 
+    # CDC. e.g. cdcwkr0
+    $command =~ s/^cdcwkr\d*$/cdcwkr/;
+
     $line = $command . " " . $pid . $remain;
   } elsif ($skip_thread) {
     # The thread is skipped.

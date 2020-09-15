@@ -4,6 +4,8 @@ tidb-inspect-tools
 tidb-inspect-tools are some useful inspection tool collections for TiDB.
 
 ## Tool list
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpingcap%2Ftidb-inspect-tools.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpingcap%2Ftidb-inspect-tools?ref=badge_shield)
+
 
 - [grafana_collector](https://github.com/pingcap/tidb-inspect-tools/tree/master/grafana_collector)
 
@@ -31,3 +33,6 @@ tidb-inspect-tools are some useful inspection tool collections for TiDB.
 
 ## License
 Apache 2.0 license. See the [LICENSE](https://github.com/pingcap/tidb-inspect-tools/blob/master/LICENSE) file for details.
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpingcap%2Ftidb-inspect-tools.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpingcap%2Ftidb-inspect-tools?ref=badge_large)
